@@ -12,7 +12,7 @@ do_func = 1;
 do_B0 = 0;
 do_dwi = 0;
 
-nb_dummies = 4;
+nb_dummies = 10;
 
 zip_output = 0;
 
@@ -107,9 +107,7 @@ for iSub = 1:nb_sub % for each subject
         
         
         % Convert files (0 is for 4D unzipped files)
-        varargout = dicm2nii(anat_src_dir, func_tgt_dir, 0);
-        
-        
+        dicm2nii(anat_src_dir, func_tgt_dir, 0);
         % Give some time to zip the files before we rename them
         pause(PauseTime/4)
         
@@ -120,20 +118,18 @@ for iSub = 1:nb_sub % for each subject
         tgt_file = spm_select('FPList', func_tgt_dir, '^.*T1w.*json$');
         movefile(tgt_file, [anat_tgt_name '.json'])
         
+        % try to get age and gender from json file
         content = spm_jsonread([anat_tgt_name '.json']);
-
         gender(iSub) = content.PatientSex;
         age(iSub) = str2double(content.PatientAge(1:3));
         
         delete(fullfile(func_tgt_dir, '*.mat'))
-        
         clear anat_tgt_name anat_tgt_json_name anat_src_dir anat_tgt_dir content
         
     end
     
     %% BOLD series
     if do_func
-        
         
         % define source and target folder for anat
         bold_dirs = spm_select('FPList', sub_src_dir, 'dir', src_func_dir_pattern);
@@ -173,8 +169,6 @@ for iSub = 1:nb_sub % for each subject
             
             % Convert files
             dicm2nii(func_src_dir, func_tgt_dir, 0)
-            
-            
             % Give some time to zip the files before we rename them
             pause(PauseTime)
             
@@ -187,14 +181,11 @@ for iSub = 1:nb_sub % for each subject
                 ['^.*' strrep(src_func_dir_pattern, '-','_') '.*.json$']);
             movefile(tgt_file, [func_tgt_name '.json'])
             
-            delete(fullfile(func_tgt_dir, '*.mat'))
-            
             
             % get onsets 
             fid = fopen (onset_files(iBold,:), 'r');
             onsets = textscan(fid,'%s%s%s%s%s', 'Delimiter', ',');
             fclose (fid);
-            
             
             % rewrite them as tsv
             event_tsv = [func_tgt_name(1:end-4) 'events.tsv'];
@@ -211,24 +202,21 @@ for iSub = 1:nb_sub % for each subject
             end
             fclose (fid);
         end
-        clear tgt_file func_tgt_name func_src_dir func_tgt_dir bold_dirs
-        
-        
+
         %% take care of the resting state
         rs_dirs = spm_select('FPList', sub_src_dir, 'dir', src_rs_dir_pattern);
-        
         if size(rs_dirs,1)>1
             error('more than one source anat folder')
         end
+        
         
         % define target file names for func
         rs_tgt_name = fullfile(func_tgt_dir, ...
             [sub_id '_task-rest_run-1_bold']);
         
+        
         % convert
         dicm2nii(rs_dirs, func_tgt_dir, 0)
-
-        
         % Give some time to zip the files before we rename them
         pause(PauseTime)
         
@@ -236,13 +224,14 @@ for iSub = 1:nb_sub % for each subject
         % Changes names of output image file
         tgt_file = spm_select('FPList', func_tgt_dir, ...
             ['^.*' strrep(src_rs_dir_pattern, '-','_') '.*.nii$']);
-        movefile(tgt_file, [func_tgt_name '.nii'])
+        movefile(tgt_file, [rs_tgt_name '.nii'])
         tgt_file = spm_select('FPList', func_tgt_dir, ...
             ['^.*' strrep(src_rs_dir_pattern, '-','_') '.*.json$']);
-        movefile(tgt_file, [func_tgt_name '.json'])
+        movefile(tgt_file, [rs_tgt_name '.json'])
+        
         
         delete(fullfile(func_tgt_dir, '*.mat'))
-        
+        clear tgt_file func_tgt_name func_src_dir func_tgt_dir bold_dirs
     end
 end
 
