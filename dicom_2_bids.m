@@ -53,11 +53,11 @@ clc
 
 %% parameters definitions
 % select what to convert and transfer
-do_anat = 0;
-do_func = 0;
-do_dwi = 0;
+do_anat = 1;
+do_func = 1;
+do_dwi = 1;
 
-nb_dummies = 9; %9 MAX!!!!
+nb_dummies = 0; %9 MAX!!!!
 
 zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for SPM users)
 delete_json = 1; % in case you have already created the json files in another way (or you ahve already put some in the root folder)
@@ -86,6 +86,7 @@ src_bref_dir_pattern = 'ap_b0';
 
 %% set path and directories
 addpath(spm_path)
+spm('defaults','fmri')
 addpath(fullfile(pwd,'dicm2nii'))
 
 mkdir(tgt_dir)
@@ -214,7 +215,7 @@ for iSub = 1:nb_sub % for each subject
                 [sub_id '_task-' task_name '_run-' num2str(iBold) '_bold']);
             
             % set dummies aside
-            mkdir(fullfile(func_src_dir, 'dummy'))
+            mkdir(fullfile(deblank(func_src_dir), 'dummy'))
             dummies = spm_select('FPList', func_src_dir, ...
                 ['^.*' subj_ls(iSub).name '-000[0-' num2str(nb_dummies) '].dcm$']);
             if ~isempty(dummies)
