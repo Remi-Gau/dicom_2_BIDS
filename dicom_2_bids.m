@@ -168,11 +168,11 @@ for iSub = 1:nb_sub % for each subject
         % try to get age and gender from json file
         content = spm_jsonread([anat_tgt_name '.json']);
         try
-            gender(iSub) = content.PatientSex;
+            gender{iSub} = content.PatientSex;
             age(iSub) = str2double(content.PatientAge(1:3));
         catch
             warning('Could not get participant age or gender.')
-            gender(iSub) = '?';
+            gender{iSub} = '?';
             age(iSub) = NaN;
         end
         
