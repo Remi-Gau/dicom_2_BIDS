@@ -1,6 +1,12 @@
 # DICOM to BIDS with SPM12
 
-Set of scripts and functions to convert a set of DICOM folders into a BIDS.
+Set of scripts and functions to convert a set of DICOM folders into a BIDS using SPM12 and dicm2nii
+
+Remember to check the ouput with the [BIDS validator](https://bids-standard.github.io/bids-validator/).
+
+Need to know more about BIDS
+-   [BIDS starter kit](https://github.com/bids-standard/bids-starter-kit)
+-   [BIDS specification](https://bids-specification.readthedocs.io/en/stable)
 
 ## REQUIRES
 -   SPM12
