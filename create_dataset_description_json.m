@@ -1,7 +1,4 @@
-%%
-clear
-
-tgt_dir = 'D:\olf_blind\raw';
+function create_dataset_description_json(tgt_dir)
 
 dataset_description_json_name = fullfile(tgt_dir, ...
     'dataset_description.json');
@@ -56,3 +53,5 @@ if ~isdir(jsonSaveDir)
 end
 
 spm_jsonwrite(dataset_description_json_name,dd_json,json_options)
+
+end

@@ -1,10 +1,48 @@
-% script to import DICOM and format them into a
+% script to import DICOM and format them into a BIDS structure
 % while saving json and creating a participants.tsv file
+% also creates a dataset_decription.json with empty fields
+
+% REQUIRES
+% - SPM12
+% - DICOM2NII (included in this repo)
+
+% in theory a lot of the parameters can be changed in the parameters
+% section at the beginning of the script
+
+% at the moment this script is not super flexible and assumes only one session
+% and can only deal with anatomical T1, functional (bold and rest) and DWI.
+
+% it also makes some assumption on the number of DWI, ANAT, resting state
+% runs (only takes 1).
+
+% the way the subject naming happens is hardcoded (line 90-100).
+
+% the script can remove up to 9 dummy scans (they are directly moved from the
+% dicom source folder and put in a 'dummy' folder) so that dicm2nii does
+% not "see" them
+
+% the way event.tsv files are generated is very unflexible (line 210-230)
+% also the stimulus onset is not yet recalculated depending on the number
+% of dummies removed
 
 % there will still some cleaning up to do in the json files: for example
 % most likely you will only want to have json files in the root folder and
 % that apply to all inferior levels rather than one json file per nifti
 % file
+
+% json files created will be modified to remove any field with 'Patient' in
+% it and the phase encoding direction will be re-encoded in a BIDS
+% compliant way (i, j, k, i-, j-, k-)
+
+% the participants.tsv file is created based on the header info of the
+% anatomical (sex and age) so it might not be accurate
+
+% TO DO
+% - extract participant weight from header and put in tsv file?
+% - refactor the different sections anat, func, dwi
+% - subject renaming should be more flexible
+% - allow for removal of more than 9 dummy scans
+
 
 clear
 clc
@@ -12,14 +50,14 @@ clc
 
 %% parameters definitions
 % select what to convert and transfer
-do_anat = 1;
-do_func = 1;
-do_dwi = 1;
+do_anat = 0;
+do_func = 0;
+do_dwi = 0;
 
-nb_dummies = 9;
+nb_dummies = 9; %9 MAX!!!!
 
 zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for SPM users)
-delete_json = 1; % in case you have already created the json files in another way
+delete_json = 1; % in case you have already created the json files in another way (or you ahve already put some in the root folder)
 
 task_name = 'olfiddis';
 
@@ -60,7 +98,13 @@ else
     PauseTime = 1;
 end
 
+
 %% let's do this
+
+% create general json and data dictionary files
+create_dataset_description_json(tgt_dir)
+create_events_json(tgt_dir, task_name)
+
 % get list of subjsects
 subj_ls = dir(fullfile(src_dir, subject_dir_pattern));
 nb_sub = numel(subj_ls);
@@ -93,7 +137,7 @@ for iSub = 1:nb_sub % for each subject
     if do_anat
         
         % define source and target folder for anat
-        ls_dir = spm_select('FPList',sub_src_dir,'dir', src_anat_dir_pattern);
+        ls_dir = spm_select('FPList', sub_src_dir, 'dir', src_anat_dir_pattern);
         if size(ls_dir,1)==1
             anat_src_dir = ls_dir;
         else
@@ -121,8 +165,8 @@ for iSub = 1:nb_sub % for each subject
         % try to get age and gender from json file
         content = spm_jsonread([anat_tgt_name '.json']);
         try
-        gender(iSub) = content.PatientSex;
-        age(iSub) = str2double(content.PatientAge(1:3));
+            gender(iSub) = content.PatientSex;
+            age(iSub) = str2double(content.PatientAge(1:3));
         catch
             warning('Could not get participant age or gender.')
             gender(iSub) = '?';
@@ -131,7 +175,7 @@ for iSub = 1:nb_sub % for each subject
         
         % fix json content
         fix_json_content([anat_tgt_name '.json'])
-
+        
         % clean up
         delete(fullfile(anat_tgt_dir, '*.mat'))
         if delete_json
@@ -140,6 +184,7 @@ for iSub = 1:nb_sub % for each subject
         clear anat_tgt_name anat_tgt_json_name anat_src_dir anat_tgt_dir content
         
     end
+    
     
     %% BOLD series
     if do_func
@@ -175,12 +220,12 @@ for iSub = 1:nb_sub % for each subject
                 end
             end
             
-            % Convert files
+            % convert files
             dicm2nii(func_src_dir, func_tgt_dir, 0)
-            % Give some time to zip the files before we rename them
+            % give some time to zip the files before we rename them
             pause(PauseTime)
             
-            % Changes names of output image file
+            % changes names of output image file
             rename_tgt_file(func_tgt_dir, src_func_dir_pattern, func_tgt_name, 'nii');
             rename_tgt_file(func_tgt_dir, src_func_dir_pattern, func_tgt_name, 'json');
             
@@ -213,23 +258,23 @@ for iSub = 1:nb_sub % for each subject
         rs_dirs = spm_select('FPList', sub_src_dir, 'dir', src_rs_dir_pattern);
         if size(rs_dirs,1)>1
             error('more than one source RS folder')
+        elseif size(rs_dirs,1)==1
+            % define target file names for func
+            rs_tgt_name = fullfile(func_tgt_dir, ...
+                [sub_id '_task-rest_run-1_bold']);
+            
+            % convert
+            dicm2nii(rs_dirs, func_tgt_dir, 0)
+            % give some time to zip the files before we rename them
+            pause(PauseTime)
+            
+            % changes names of output image file
+            rename_tgt_file(func_tgt_dir, src_rs_dir_pattern, rs_tgt_name, 'nii');
+            rename_tgt_file(func_tgt_dir, src_rs_dir_pattern, rs_tgt_name, 'json');
+            
+            % fix json content
+            fix_json_content([rs_tgt_name '.json'])
         end
-        
-        % define target file names for func
-        rs_tgt_name = fullfile(func_tgt_dir, ...
-            [sub_id '_task-rest_run-1_bold']);
-        
-        % convert
-        dicm2nii(rs_dirs, func_tgt_dir, 0)
-        % Give some time to zip the files before we rename them
-        pause(PauseTime)
-        
-        % Changes names of output image file
-        rename_tgt_file(func_tgt_dir, src_rs_dir_pattern, rs_tgt_name, 'nii');
-        rename_tgt_file(func_tgt_dir, src_rs_dir_pattern, rs_tgt_name, 'json');
-        
-        % fix json content
-        fix_json_content([rs_tgt_name '.json'])
         
         % clean up
         delete(fullfile(func_tgt_dir, '*.mat'))
@@ -247,102 +292,87 @@ for iSub = 1:nb_sub % for each subject
             ['^.*' src_dwi_dir_pattern '$']);
         if size(dwi_src_dir,1)>1
             error('more than one source dwi folder')
-        end
-        dwi_tgt_dir = fullfile(sub_tgt_dir, 'dwi');
-        
-        % Remove any Nifti files and json present
-        delete(fullfile(dwi_tgt_dir, '*.nii*'))
-        delete(fullfile(dwi_tgt_dir, '*.json'))
-        delete(fullfile(dwi_tgt_dir, '*.bvec'))
-        delete(fullfile(dwi_tgt_dir, '*.bval'))
-        
-        % define target file names for dwi
-        dwi_tgt_name = fullfile(dwi_tgt_dir, [sub_id  '_dwi']);
-        
-        % convert
-        dicm2nii(dwi_src_dir, dwi_tgt_dir, 0)
-        % Give some time to zip the files before we rename them
-        pause(PauseTime)
-        
-        % Changes names of output image file
-        rename_tgt_file(dwi_tgt_dir, src_dwi_dir_pattern, dwi_tgt_name, 'nii');
-        rename_tgt_file(dwi_tgt_dir, src_dwi_dir_pattern, dwi_tgt_name, 'json');
-        rename_tgt_file(dwi_tgt_dir, src_dwi_dir_pattern, dwi_tgt_name, 'bvec');
-        rename_tgt_file(dwi_tgt_dir, src_dwi_dir_pattern, dwi_tgt_name, 'bval');
-        
-        % fix json content
-        fix_json_content([dwi_tgt_name '.json'])
-        
-        % reformat bval (remove double spaces)
-        bval = load([dwi_tgt_name '.bval']);
-        fid = fopen ([dwi_tgt_name '.bval'], 'w');
-        fprintf(fid, '%i ', bval);
-        fclose (fid); clear bval
-        
-        % reformat bvec (remove double spaces)
-        bvec = load([dwi_tgt_name '.bvec']);
-        fid = fopen ([dwi_tgt_name '.bvec'], 'w');
-        fprintf(fid, '%f ', bvec(1,:));
-        fprintf(fid, '\n');
-        fprintf(fid, '%f ', bvec(2,:));
-        fprintf(fid, '\n');
-        fprintf(fid, '%f ', bvec(3,:));
-        fclose (fid); clear bvec
-        
-        if delete_json
+        elseif size(dwi_src_dir,1)==1
+            dwi_tgt_dir = fullfile(sub_tgt_dir, 'dwi');
+            
+            % remove any Nifti files and json present
+            delete(fullfile(dwi_tgt_dir, '*.nii*'))
             delete(fullfile(dwi_tgt_dir, '*.json'))
+            delete(fullfile(dwi_tgt_dir, '*.bv*'))
+            
+            % define target file names for dwi
+            dwi_tgt_name = fullfile(dwi_tgt_dir, [sub_id  '_dwi']);
+            
+            % convert
+            dicm2nii(dwi_src_dir, dwi_tgt_dir, 0)
+            % Give some time to zip the files before we rename them
+            pause(PauseTime)
+            
+            % Changes names of output image file
+            rename_tgt_file(dwi_tgt_dir, src_dwi_dir_pattern, dwi_tgt_name, 'nii');
+            rename_tgt_file(dwi_tgt_dir, src_dwi_dir_pattern, dwi_tgt_name, 'json');
+            rename_tgt_file(dwi_tgt_dir, src_dwi_dir_pattern, dwi_tgt_name, 'bvec');
+            rename_tgt_file(dwi_tgt_dir, src_dwi_dir_pattern, dwi_tgt_name, 'bval');
+            
+            % fix json content
+            fix_json_content([dwi_tgt_name '.json'])
+            
+            % reformat bval (remove double spaces)
+            bval = load([dwi_tgt_name '.bval']);
+            fid = fopen ([dwi_tgt_name '.bval'], 'w');
+            fprintf(fid, '%i ', bval);
+            fclose (fid); clear bval
+            
+            % reformat bvec (remove double spaces)
+            bvec = load([dwi_tgt_name '.bvec']);
+            fid = fopen ([dwi_tgt_name '.bvec'], 'w');
+            fprintf(fid, '%f ', bvec(1,:));
+            fprintf(fid, '\n');
+            fprintf(fid, '%f ', bvec(2,:));
+            fprintf(fid, '\n');
+            fprintf(fid, '%f ', bvec(3,:));
+            fclose (fid); clear bvec
+            
+            if delete_json
+                delete(fullfile(dwi_tgt_dir, '*.json'))
+            end
+            
+            %% do b_ref
+            % define source and target folder for bref
+            bref_dirs = spm_select('FPList', sub_src_dir, 'dir', ...
+                src_bref_dir_pattern);
+            if size(bref_dirs,1)>1
+                error('more than one source bref folder')
+            end
+            
+            % define target file names for func
+            bref_tgt_name = fullfile(dwi_tgt_dir, [sub_id  '_sbref']);
+            
+            % convert
+            dicm2nii(bref_dirs, dwi_tgt_dir, 0)
+            % Give some time to zip the files before we rename them
+            pause(PauseTime)
+            
+            % Changes names of output image file
+            rename_tgt_file(dwi_tgt_dir, src_bref_dir_pattern, bref_tgt_name, 'nii');
+            rename_tgt_file(dwi_tgt_dir, src_bref_dir_pattern, bref_tgt_name, 'json');
+            
+            % fix json content
+            fix_json_content([bref_tgt_name '.json'])
+            
+            % clean up
+            delete(fullfile(dwi_tgt_dir, '*.mat'))
+            delete(fullfile(dwi_tgt_dir, '*.txt'))
+            clear tgt_file dwi_tgt_name dwi_src_dir dwi_tgt_dir dwi_dirs
+            
         end
         
-        %% do b_ref
-        % define source and target folder for bref
-        bref_dirs = spm_select('FPList', sub_src_dir, 'dir', ...
-            src_bref_dir_pattern);
-        if size(bref_dirs,1)>1
-            error('more than one source bref folder')
-        end
-        
-        % define target file names for func
-        bref_tgt_name = fullfile(dwi_tgt_dir, [sub_id  '_sbref']);
-        
-        % convert
-        dicm2nii(bref_dirs, dwi_tgt_dir, 0)
-        % Give some time to zip the files before we rename them
-        pause(PauseTime)
-        
-        % Changes names of output image file
-        rename_tgt_file(dwi_tgt_dir, src_bref_dir_pattern, bref_tgt_name, 'nii');
-        rename_tgt_file(dwi_tgt_dir, src_bref_dir_pattern, bref_tgt_name, 'json');
-        
-        % fix json content
-        fix_json_content([bref_tgt_name '.json'])
-
-        % clean up
-        delete(fullfile(dwi_tgt_dir, '*.mat'))
-        delete(fullfile(dwi_tgt_dir, '*.txt'))
-%         if delete_json
-%             delete(fullfile(dwi_tgt_dir, '*.json'))
-%         end
-        clear tgt_file dwi_tgt_name dwi_src_dir dwi_tgt_dir dwi_dirs
     end
+    
 end
-
 
 
 %% print participants.tsv file
 if do_anat
-    headers = {'participant_id' 'age' 'sex'};
-    
-    DestName = fullfile(tgt_dir, 'participants.tsv');
-    OFilefID = fopen (DestName, 'w');
-    
-    fprintf(OFilefID, '%s\t%s\t%s\n', headers{1}, headers{2}, headers{3} );
-    
-    for iSub = 1:nb_sub
-        fprintf (OFilefID, '%s\t%i\t%s\n', ...
-            ls_sub_id{iSub}, ...
-            age(iSub), ...
-            gender(iSub));
-    end
-    
-    fclose (OFilefID);
+    create_participants_tsv(tgt_dir, ls_sub_id, age, gender);
 end
