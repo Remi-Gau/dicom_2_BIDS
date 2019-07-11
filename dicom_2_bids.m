@@ -9,6 +9,9 @@
 % in theory a lot of the parameters can be changed in the parameters
 % section at the beginning of the script
 
+% in general make sure you ahve removed from your subjects source folder
+% any folder that you do not want to convert (interrupted sequences for example)
+
 % at the moment this script is not super flexible and assumes only one session
 % and can only deal with anatomical T1, functional (bold and rest) and DWI.
 
