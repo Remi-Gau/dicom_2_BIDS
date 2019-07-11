@@ -15,6 +15,8 @@ Set of scripts and functions to convert a set of DICOM folders into a BIDS.
 -   subject renaming should be more flexible
 -   allow for removal of more than 9 dummy scans
 
+## CONTENT
+
 ### `deface_anat.m`
 
 Uses SPM12 to deface all the T1w of a BIDS.
