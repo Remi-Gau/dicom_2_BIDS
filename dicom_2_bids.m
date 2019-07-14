@@ -3,7 +3,7 @@
 % also creates a dataset_decription.json with empty fields
 
 % REQUIRES
-% - SPM12
+% - SPM12 7487
 % - DICOM2NII (included in this repo)
 
 % in theory a lot of the parameters can be changed in the parameters
@@ -53,16 +53,18 @@ clc
 
 %% parameters definitions
 % select what to convert and transfer
-do_anat = 1;
+do_anat = 0;
 do_func = 1;
-do_dwi = 1;
+do_dwi = 0;
 
 nb_dummies = 0; %9 MAX!!!!
 
 zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for SPM users)
 delete_json = 1; % in case you have already created the json files in another way (or you ahve already put some in the root folder)
 
-task_name = 'olfiddis';
+task_name_1 = 'olfloc';
+task_name_2 = 'olfdis';
+run_nb = [1 2 1 2]; % to give a number to each run depending on which task they belong to
 
 % fullpath of the spm 12 folder
 spm_path = 'D:\Dropbox\Code\MATLAB\Neuroimaging\SPM\spm12';
@@ -107,7 +109,8 @@ end
 
 % create general json and data dictionary files
 create_dataset_description_json(tgt_dir)
-create_events_json(tgt_dir, task_name)
+create_events_json(tgt_dir, task_name_1)
+create_events_json(tgt_dir, task_name_2)
 
 % get list of subjsects
 subj_ls = dir(fullfile(src_dir, subject_dir_pattern));
@@ -200,6 +203,7 @@ for iSub = 1:nb_sub % for each subject
         % Remove any Nifti files and json present
         delete(fullfile(func_tgt_dir, '*.nii*'))
         delete(fullfile(func_tgt_dir, '*.json'))
+        delete(fullfile(func_tgt_dir, '*.tsv'))
         
         % list onset files for that subject
         onset_files = spm_select('FPList', ...
@@ -211,11 +215,30 @@ for iSub = 1:nb_sub % for each subject
             func_src_dir = bold_dirs(iBold,:);
             
             % define target file names for func
-            func_tgt_name = fullfile(func_tgt_dir, ...
-                [sub_id '_task-' task_name '_run-' num2str(iBold) '_bold']);
+            if iBold<3
+                func_tgt_name = fullfile(func_tgt_dir, ...
+                    [sub_id '_task-' task_name_1 '_run-' num2str(run_nb(iBold)) '_bold']);
+            else
+                func_tgt_name = fullfile(func_tgt_dir, ...
+                    [sub_id '_task-' task_name_2 '_run-' num2str(run_nb(iBold)) '_bold']);
+            end
             
             % set dummies aside
-            mkdir(fullfile(deblank(func_src_dir), 'dummy'))
+            % first we bring them back into the main pool in case the
+            % number of dummies we want to set aside has changed since last
+            % time we ran the conversion
+            if isfolder(fullfile(deblank(func_src_dir), 'dummy'))
+                dummies = spm_select('FPList', fullfile(func_src_dir, 'dummy'), ...
+                    '^.*.dcm$');
+                for i_dummy = 1:size(dummies,1)
+                    movefile(dummies(i_dummy,:), func_src_dir)
+                end
+            else
+                mkdir(fullfile(deblank(func_src_dir), 'dummy'))
+            end
+            
+            % then we select the ones we want to discard and move them into
+            % the dummy folder
             dummies = spm_select('FPList', func_src_dir, ...
                 ['^.*' subj_ls(iSub).name '-000[0-' num2str(nb_dummies) '].dcm$']);
             if ~isempty(dummies)
