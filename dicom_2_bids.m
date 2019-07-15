@@ -53,17 +53,17 @@ clc
 
 %% parameters definitions
 % select what to convert and transfer
-do_anat = 0;
-do_func = 1;
+do_anat = 1;
+do_func = 0;
 do_dwi = 0;
 
-nb_dummies = 0; %9 MAX!!!!
+nb_dummies = 8; %9 MAX!!!!
 
 zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for SPM users)
 delete_json = 1; % in case you have already created the json files in another way (or you ahve already put some in the root folder)
 
-task_name_1 = 'olfloc';
-task_name_2 = 'olfdis';
+task_name_1 = 'olfid';
+task_name_2 = 'olfloc';
 run_nb = [1 2 1 2]; % to give a number to each run depending on which task they belong to
 
 % fullpath of the spm 12 folder
@@ -78,6 +78,7 @@ onset_files_dir = 'D:\olf_blind\source\Fichiers onset';
 subject_dir_pattern = 'Olf_BLind*';
 
 src_anat_dir_pattern = 'acq-mprage_T1w';
+src_T2_dir_pattern = 'acq-tse_t2-tse-cor-448-2mm-FOV140_run';
 
 src_func_dir_pattern = 'bold_run';
 src_rs_dir_pattern = 'bold_RS';
@@ -111,6 +112,14 @@ end
 create_dataset_description_json(tgt_dir)
 create_events_json(tgt_dir, task_name_1)
 create_events_json(tgt_dir, task_name_2)
+
+if nb_dummies > 0
+    opts.indent = '    ';
+    filename = fullfile(tgt_dir, 'discarded_dummy.json');
+    content.NumberOfVolumesDiscardedByUser = nb_dummies;
+    spm_jsonwrite(filename, content, opts)
+end
+
 
 % get list of subjsects
 subj_ls = dir(fullfile(src_dir, subject_dir_pattern));
@@ -183,6 +192,32 @@ for iSub = 1:nb_sub % for each subject
         % fix json content
         fix_json_content([anat_tgt_name '.json'])
         
+
+        %% do T2 olfactory bulb high-res image
+                % define source and target folder for anat
+        ls_dir = spm_select('FPList', sub_src_dir, 'dir', src_T2_dir_pattern);
+        if size(ls_dir,1)>1
+            warning('More than one source high-res olfactory bulb T2 image folder. Will skip it for now.')
+        elseif size(ls_dir,1)==1
+            
+            T2_src_dir = ls_dir;
+            
+            % define target file names for anat
+            T2_tgt_name = fullfile(anat_tgt_dir, [sub_id '_acq-tse_T2w']);
+            
+            % Convert files (0 is for 4D unzipped files)
+            dicm2nii(T2_src_dir, anat_tgt_dir, 0);
+            % Give some time to zip the files before we rename them
+            pause(PauseTime/4)
+            
+            % rename json and .nii output files
+            rename_tgt_file(anat_tgt_dir, src_T2_dir_pattern, T2_tgt_name, 'nii');
+            rename_tgt_file(anat_tgt_dir, src_T2_dir_pattern, T2_tgt_name, 'json');
+            
+            % fix json content
+            fix_json_content([T2_tgt_name '.json'])
+        end
+        
         % clean up
         delete(fullfile(anat_tgt_dir, '*.mat'))
         if delete_json
@@ -197,7 +232,7 @@ for iSub = 1:nb_sub % for each subject
     if do_func
         
         % define source and target folder for func
-        bold_dirs = spm_select('FPList', sub_src_dir, 'dir', src_func_dir_pattern);
+        bold_dirs = spm_select('FPList', sub_src_dir, 'dir', [src_func_dir_pattern '-[0-9]$']);
         func_tgt_dir = fullfile(sub_tgt_dir, 'func');
         
         % Remove any Nifti files and json present
@@ -224,28 +259,7 @@ for iSub = 1:nb_sub % for each subject
             end
             
             % set dummies aside
-            % first we bring them back into the main pool in case the
-            % number of dummies we want to set aside has changed since last
-            % time we ran the conversion
-            if isfolder(fullfile(deblank(func_src_dir), 'dummy'))
-                dummies = spm_select('FPList', fullfile(func_src_dir, 'dummy'), ...
-                    '^.*.dcm$');
-                for i_dummy = 1:size(dummies,1)
-                    movefile(dummies(i_dummy,:), func_src_dir)
-                end
-            else
-                mkdir(fullfile(deblank(func_src_dir), 'dummy'))
-            end
-            
-            % then we select the ones we want to discard and move them into
-            % the dummy folder
-            dummies = spm_select('FPList', func_src_dir, ...
-                ['^.*' subj_ls(iSub).name '-000[0-' num2str(nb_dummies) '].dcm$']);
-            if ~isempty(dummies)
-                for i_dummy = 1:size(dummies,1)
-                    movefile(dummies(i_dummy,:), fullfile(func_src_dir, 'dummy'))
-                end
-            end
+            discard_dummies(func_src_dir, nb_dummies, subj_ls, iSub)
             
             % convert files
             dicm2nii(func_src_dir, func_tgt_dir, 0)
@@ -282,13 +296,16 @@ for iSub = 1:nb_sub % for each subject
         
         
         %% take care of the resting state
-        rs_dirs = spm_select('FPList', sub_src_dir, 'dir', src_rs_dir_pattern);
+        rs_dirs = spm_select('FPList', sub_src_dir, 'dir', [src_rs_dir_pattern '$']);
         if size(rs_dirs,1)>1
             error('more than one source RS folder')
         elseif size(rs_dirs,1)==1
             % define target file names for func
             rs_tgt_name = fullfile(func_tgt_dir, ...
                 [sub_id '_task-rest_run-1_bold']);
+            
+            % set dummies aside
+            discard_dummies(rs_dirs, nb_dummies, subj_ls, iSub)
             
             % convert
             dicm2nii(rs_dirs, func_tgt_dir, 0)
