@@ -53,8 +53,8 @@ clc
 
 %% parameters definitions
 % select what to convert and transfer
-do_anat = 1;
-do_func = 0;
+do_anat = 0;
+do_func = 1;
 do_dwi = 0;
 
 nb_dummies = 8; %9 MAX!!!!
@@ -112,6 +112,9 @@ end
 create_dataset_description_json(tgt_dir)
 create_events_json(tgt_dir, task_name_1)
 create_events_json(tgt_dir, task_name_2)
+create_stim_json(tgt_dir, task_name_1)
+create_stim_json(tgt_dir, task_name_2)
+
 
 if nb_dummies > 0
     opts.indent = '    ';
@@ -244,35 +247,51 @@ for iSub = 1:nb_sub % for each subject
         onset_files = spm_select('FPList', ...
             fullfile(onset_files_dir, subj_ls(iSub).name(11:end)), ...
             '^Results.*.txt$');
-        
+
         for iBold = 1:size(bold_dirs,1)
             
             func_src_dir = bold_dirs(iBold,:);
             
-            % define target file names for func
-            if iBold<3
-                func_tgt_name = fullfile(func_tgt_dir, ...
-                    [sub_id '_task-' task_name_1 '_run-' num2str(run_nb(iBold)) '_bold']);
-            else
-                func_tgt_name = fullfile(func_tgt_dir, ...
-                    [sub_id '_task-' task_name_2 '_run-' num2str(run_nb(iBold)) '_bold']);
+            switch iBold
+                case 1
+                    func_tgt_name = fullfile(func_tgt_dir, ...
+                        [sub_id '_task-' task_name_1 '_run-' num2str(run_nb(iBold)) '_bold']);
+                    breath_pattern = '[Ii]den1';
+                case 2
+                    func_tgt_name = fullfile(func_tgt_dir, ...
+                        [sub_id '_task-' task_name_1 '_run-' num2str(run_nb(iBold)) '_bold']);
+                    breath_pattern = '[Ii]den2';
+                case 3
+                    func_tgt_name = fullfile(func_tgt_dir, ...
+                        [sub_id '_task-' task_name_2 '_run-' num2str(run_nb(iBold)) '_bold']);
+                    breath_pattern = '[Ll]oc1';
+                case 4
+                    func_tgt_name = fullfile(func_tgt_dir, ...
+                        [sub_id '_task-' task_name_2 '_run-' num2str(run_nb(iBold)) '_bold']);
+                    breath_pattern = '[Ll]oc2';
             end
+
+            breathing_file = spm_select('FPList', ...
+                fullfile(onset_files_dir, subj_ls(iSub).name(11:end)), ...
+                ['^Breathing.*' breath_pattern '.*.txt$']);
             
             % set dummies aside
-            discard_dummies(func_src_dir, nb_dummies, subj_ls, iSub)
+%             discard_dummies(func_src_dir, nb_dummies, subj_ls, iSub)
             
             % convert files
-            dicm2nii(func_src_dir, func_tgt_dir, 0)
+%             dicm2nii(func_src_dir, func_tgt_dir, 0)
             % give some time to zip the files before we rename them
-            pause(PauseTime)
+%             pause(PauseTime)
             
             % changes names of output image file
-            rename_tgt_file(func_tgt_dir, src_func_dir_pattern, func_tgt_name, 'nii');
-            rename_tgt_file(func_tgt_dir, src_func_dir_pattern, func_tgt_name, 'json');
+%             rename_tgt_file(func_tgt_dir, src_func_dir_pattern, func_tgt_name, 'nii');
+%             rename_tgt_file(func_tgt_dir, src_func_dir_pattern, func_tgt_name, 'json');
             
             % fix json content
-            fix_json_content([func_tgt_name '.json'])
+%             fix_json_content([func_tgt_name '.json'])
             
+            
+            %% onset file
             % get event onsets
             fid = fopen (onset_files(iBold,:), 'r');
             onsets = textscan(fid,'%s%s%s%s%s', 'Delimiter', ',');
@@ -292,6 +311,26 @@ for iSub = 1:nb_sub % for each subject
                     onsets{3}{i_line});
             end
             fclose (fid);
+            
+            %% stim file
+   
+            % read content of breathing file
+            fid = fopen (breathing_file, 'r');
+            stim = textscan(fid,'%f%f%f%f%f', 'Delimiter', ',');
+            fclose (fid);
+            
+            % rewrite them as tsv
+            stim_tsv = [func_tgt_name(1:end-4) 'stim.tsv'];
+            fid = fopen (stim_tsv, 'w');
+            
+            for i_line =  1:size(stim{1},1)
+                fprintf(fid, '%f\t%f\t%f\t%f\t%f\n', ...
+                    stim{1}(i_line), stim{2}(i_line), ...
+                    stim{3}(i_line), stim{4}(i_line), stim{5}(i_line));
+            end
+            fclose (fid);
+            gzip(stim_tsv)
+            delete(stim_tsv)
         end
         
         
