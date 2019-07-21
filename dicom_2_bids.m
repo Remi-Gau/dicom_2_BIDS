@@ -112,8 +112,8 @@ end
 create_dataset_description_json(tgt_dir)
 create_events_json(tgt_dir, task_name_1)
 create_events_json(tgt_dir, task_name_2)
-create_stim_json(tgt_dir, task_name_1)
-create_stim_json(tgt_dir, task_name_2)
+create_stim_json(tgt_dir, task_name_1, nb_dummies)
+create_stim_json(tgt_dir, task_name_2, nb_dummies)
 
 
 if nb_dummies > 0
@@ -276,19 +276,19 @@ for iSub = 1:nb_sub % for each subject
                 ['^Breathing.*' breath_pattern '.*.txt$']);
             
             % set dummies aside
-%             discard_dummies(func_src_dir, nb_dummies, subj_ls, iSub)
+            discard_dummies(func_src_dir, nb_dummies, subj_ls, iSub)
             
             % convert files
-%             dicm2nii(func_src_dir, func_tgt_dir, 0)
+            dicm2nii(func_src_dir, func_tgt_dir, 0)
             % give some time to zip the files before we rename them
-%             pause(PauseTime)
+            pause(PauseTime)
             
             % changes names of output image file
-%             rename_tgt_file(func_tgt_dir, src_func_dir_pattern, func_tgt_name, 'nii');
-%             rename_tgt_file(func_tgt_dir, src_func_dir_pattern, func_tgt_name, 'json');
+            rename_tgt_file(func_tgt_dir, src_func_dir_pattern, func_tgt_name, 'nii');
+            rename_tgt_file(func_tgt_dir, src_func_dir_pattern, func_tgt_name, 'json');
             
             % fix json content
-%             fix_json_content([func_tgt_name '.json'])
+            fix_json_content([func_tgt_name '.json'])
             
             
             %% onset file
@@ -347,8 +347,8 @@ for iSub = 1:nb_sub % for each subject
             discard_dummies(rs_dirs, nb_dummies, subj_ls, iSub)
             
             % convert
-            dicm2nii(rs_dirs, func_tgt_dir, 0)
-            % give some time to zip the files before we rename them
+            % dicm2nii(rs_dirs, func_tgt_dir, 0)
+            give some time to zip the files before we rename them
             pause(PauseTime)
             
             % changes names of output image file
