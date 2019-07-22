@@ -92,26 +92,58 @@ opt.tgt_anat_dir_patterns = {
     '_T1w', ...
     '_acq-tse_T2w'};
 
+
 % Details for FUNC
-src_func_dir_pattern = 'bold_run';
-src_rs_dir_pattern = 'bold_RS';
-task_name_1 = 'olfid';
-task_name_2 = 'olfloc';
-run_nb = [1 2 1 2]; % to give a number to each run depending on which task they belong to
-nb_dummies = 8; %9 MAX!!!!
+opt.src_func_dir_patterns = {
+    'bold_run-[1-2]';...
+    'bold_run-[3-4]';...
+    'bold_RS'};
+opt.task_name = {...
+    'olfid'; ...
+    'olfloc'; ...
+    'rest'};
+opt.get_onset = [
+    0;... 
+    0;...
+    0];
+opt.get_stim = [
+    0;...
+    0;...
+    0];
+opt.nb_folder = [;...
+    2;...
+    2;...
+    1];
+
+% breath_pattern = '[Ii]den1';
+% breath_pattern = '[Ll]oc2';
+
+opt.nb_dummies = 8; %9 MAX!!!!
+
 
 % Details for DWI
+% target folders to convert
 opt.src_dwi_dir_patterns = {...
     'pa_dwi', ...
     'ap_b0'};
+% corresponding names for the output file in BIDS data set
 opt.tgt_dwi_dir_patterns = {
     '_dwi', ...
     '_sbref'};
-opt.bvecval = [1 0];
-% opt.src_bref_dir_pattern = 'ap_b0';
+% take care of eventual bval bvec values
+opt.bvecval = [...
+    1; ...
+    0];
+
+
+% option for json writing
+opt.indent = '    ';
 
 
 %% set path and directories
+addpath(genpath(fullfile(pwd, 'subfun')))
+addpath(fullfile(pwd,'dicm2nii'))
+
 addpath(spm_path)
 spm('defaults','fmri')
 % check spm version
@@ -200,148 +232,24 @@ for iSub = 1:nb_sub % for each subject
     %% BOLD series
     if do_func
         
-        if nb_dummies > 0
+        if opt.nb_dummies > 0
+            opts.indent = opt.indent;
             filename = fullfile(tgt_dir, 'discarded_dummy.json');
-            content.NumberOfVolumesDiscardedByUser = nb_dummies;
+            content.NumberOfVolumesDiscardedByUser = opt.nb_dummies;
             spm_jsonwrite(filename, content, opts)
         end
-        
-        create_events_json(tgt_dir, task_name_1)
-        create_events_json(tgt_dir, task_name_2)
-        create_stim_json(tgt_dir, task_name_1, nb_dummies)
-        create_stim_json(tgt_dir, task_name_2, nb_dummies)
-        
-        % define source and target folder for func
-        bold_dirs = spm_select('FPList', sub_src_dir, 'dir', [src_func_dir_pattern '-[0-9]$']);
-        func_tgt_dir = fullfile(sub_tgt_dir, 'func');
-        
-        % Remove any Nifti files and json present
-        delete(fullfile(func_tgt_dir, '*.nii*'))
-        delete(fullfile(func_tgt_dir, '*.json'))
-        delete(fullfile(func_tgt_dir, '*.tsv'))
-        
-        % list onset files for that subject
-        onset_files = spm_select('FPList', ...
-            fullfile(onset_files_dir, subj_ls(iSub).name(11:end)), ...
-            '^Results.*.txt$');
-        
-        for iBold = 1:size(bold_dirs,1)
-            
-            func_src_dir = bold_dirs(iBold,:);
-            
-            switch iBold
-                case 1
-                    func_tgt_name = fullfile(func_tgt_dir, ...
-                        [sub_id '_task-' task_name_1 '_run-' num2str(run_nb(iBold)) '_bold']);
-                    breath_pattern = '[Ii]den1';
-                case 2
-                    func_tgt_name = fullfile(func_tgt_dir, ...
-                        [sub_id '_task-' task_name_1 '_run-' num2str(run_nb(iBold)) '_bold']);
-                    breath_pattern = '[Ii]den2';
-                case 3
-                    func_tgt_name = fullfile(func_tgt_dir, ...
-                        [sub_id '_task-' task_name_2 '_run-' num2str(run_nb(iBold)) '_bold']);
-                    breath_pattern = '[Ll]oc1';
-                case 4
-                    func_tgt_name = fullfile(func_tgt_dir, ...
-                        [sub_id '_task-' task_name_2 '_run-' num2str(run_nb(iBold)) '_bold']);
-                    breath_pattern = '[Ll]oc2';
-            end
-            
-            breathing_file = spm_select('FPList', ...
-                fullfile(onset_files_dir, subj_ls(iSub).name(11:end)), ...
-                ['^Breathing.*' breath_pattern '.*.txt$']);
-            
-            % set dummies aside
-            discard_dummies(func_src_dir, nb_dummies, subj_ls, iSub)
-            
-            % convert files
-            dicm2nii(func_src_dir, func_tgt_dir, opt.zip_output)
-            % give some time to zip the files before we rename them
-            pause(pauseTime)
-            
-            % changes names of output image file
-            rename_tgt_file(func_tgt_dir, src_func_dir_pattern, func_tgt_name, 'nii');
-            rename_tgt_file(func_tgt_dir, src_func_dir_pattern, func_tgt_name, 'json');
-            
-            % fix json content
-            fix_json_content([func_tgt_name '.json'])
-            
-            
-            %% onset file
-            % get event onsets
-            fid = fopen (onset_files(iBold,:), 'r');
-            onsets = textscan(fid,'%s%s%s%s%s', 'Delimiter', ',');
-            fclose (fid);
-            
-            % rewrite them as tsv
-            event_tsv = [func_tgt_name(1:end-4) 'events.tsv'];
-            fid = fopen (event_tsv, 'w');
-            
-            fprintf(fid, '%s\t%s\t%s\n', ...
-                'onset', 'duration', 'odorant');
-            
-            for i_line =  2:size(onsets{1},1)
-                fprintf(fid, '%f\t%f\t%s\n', ...
-                    str2double(onsets{4}{i_line}), ...
-                    str2double(onsets{5}{i_line}) - str2double(onsets{4}{i_line}), ...
-                    onsets{3}{i_line});
-            end
-            fclose (fid);
-            
-            %% stim file
-            
-            % read content of breathing file
-            fid = fopen (breathing_file, 'r');
-            stim = textscan(fid,'%f%f%f%f%f', 'Delimiter', ',');
-            fclose (fid);
-            
-            % rewrite them as tsv
-            stim_tsv = [func_tgt_name(1:end-4) 'stim.tsv'];
-            fid = fopen (stim_tsv, 'w');
-            
-            for i_line =  1:size(stim{1},1)
-                fprintf(fid, '%f\t%f\t%f\t%f\t%f\n', ...
-                    stim{1}(i_line), stim{2}(i_line), ...
-                    stim{3}(i_line), stim{4}(i_line), stim{5}(i_line));
-            end
-            fclose (fid);
-            gzip(stim_tsv)
-            delete(stim_tsv)
+       
+        for task_idx = 1%:numel(opt.task_name)
+            create_events_json(tgt_dir, opt, task_idx)
+            create_stim_json(tgt_dir, opt, task_idx)
+            [func_tgt_dir] = convert_func(sub_id, subj_ls, iSub, sub_src_dir, sub_tgt_dir, opt, task_idx);
         end
-        
-        
-        %% take care of the resting state
-        rs_dirs = spm_select('FPList', sub_src_dir, 'dir', [src_rs_dir_pattern '$']);
-        if size(rs_dirs,1)>1
-            error('more than one source RS folder')
-        elseif size(rs_dirs,1)==1
-            % define target file names for func
-            rs_tgt_name = fullfile(func_tgt_dir, ...
-                [sub_id '_task-rest_run-1_bold']);
-            
-            % set dummies aside
-            discard_dummies(rs_dirs, nb_dummies, subj_ls, iSub)
-            
-            % convert
-            dicm2nii(rs_dirs, func_tgt_dir, opt.zip_output)
-            % give some time to zip the files before we rename them
-            pause(pauseTime)
-            
-            % changes names of output image file
-            rename_tgt_file(func_tgt_dir, src_rs_dir_pattern, rs_tgt_name, 'nii');
-            rename_tgt_file(func_tgt_dir, src_rs_dir_pattern, rs_tgt_name, 'json');
-            
-            % fix json content
-            fix_json_content([rs_tgt_name '.json'])
-        end
-        
+
         % clean up
         delete(fullfile(func_tgt_dir, '*.mat'))
         if opt.delete_json
             delete(fullfile(func_tgt_dir, '*.json'))
         end
-        clear tgt_file func_tgt_name func_src_dir func_tgt_dir bold_dirs
         
     end
     
