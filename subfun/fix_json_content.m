@@ -1,5 +1,7 @@
 function fix_json_content(json_file_name, opt)
 
+fprintf(' cleaning %s\n', json_file_name)
+
 opts.indent = opt.indent;
 
 content = spm_jsonread(json_file_name);

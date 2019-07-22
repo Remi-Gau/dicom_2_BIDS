@@ -152,7 +152,7 @@ if any(~[strcmp(a, 'SPM12') strcmp(b, '7487')])
     str = sprintf('%s\n%s', ...
         'The current version SPM version is not SPM12 7487.', ...
         'In case of problems (e.g json file related) consider updating.');
-    warning(str)
+    warning(str); %#ok<*SPWRN>
 end
 clear a b
 
@@ -193,7 +193,7 @@ for iSub = 1:nb_sub % for each subject
     % keep track of the subjects ID to create participants.tsv
     ls_sub_id{iSub} = sub_id; %#ok<*SAGROW>
     
-    fprintf('Processing %s\n', sub_id)
+    fprintf('\n\n\nProcessing %s\n', sub_id)
     
     % creating directories in BIDS structure
     sub_src_dir = fullfile(src_dir, subj_ls(iSub).name);
@@ -203,6 +203,8 @@ for iSub = 1:nb_sub % for each subject
     
     %% Anatomy folders
     if do_anat
+        
+        fprintf('\n\ndoing ANAT\n')
         
         %% do T1w
         % we set the patterns in DICOM folder names too look for in the
@@ -232,6 +234,8 @@ for iSub = 1:nb_sub % for each subject
     %% BOLD series
     if do_func
         
+        fprintf('\n\ndoing FUNC\n')
+        
         if opt.nb_dummies > 0
             opts.indent = opt.indent;
             filename = fullfile(tgt_dir, 'discarded_dummy.json');
@@ -256,6 +260,8 @@ for iSub = 1:nb_sub % for each subject
     %% deal with diffusion imaging
     if do_dwi
 
+         fprintf('\n\ndoing DWI\n')
+        
         %% do DWI
         % we set the patterns in DICOM folder names too look for in the
         % source folder

@@ -1,5 +1,7 @@
 function discard_dummies(func_src_dir, nb_dummies, subj_ls, iSub)
 
+fprintf('\n\n discarding %i dummies from from: %s', nb_dummies, func_src_dir)
+
 dummy_dir = [deblank(func_src_dir) '-dummy'];
 
 % first we bring them back into the main pool in case the

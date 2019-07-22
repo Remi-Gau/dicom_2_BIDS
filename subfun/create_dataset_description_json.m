@@ -5,7 +5,7 @@ opts.indent = opt.indent;
 dataset_description_json_name = fullfile(tgt_dir, ...
     'dataset_description.json');
 
-
+fprintf('\ncreating %s', dataset_description_json_name)
 
 %% General fields, shared with MRI BIDS and MEG BIDS:
 
