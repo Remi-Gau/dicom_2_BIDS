@@ -41,8 +41,7 @@
 
 % TO DO
 % - extract participant weight from header and put in tsv file?
-% - refactor the different sections anat, func, dwi
-%   - make sure that all parts that should be tweaked (or hard coded are in separate functions)
+% - make sure that all parts that should be tweaked (or hard coded are in separate functions)
 % - subject renaming should be more flexible
 % - allow for removal of more than 9 dummy scans
 % - move json file of each modality into the source folder
@@ -60,19 +59,19 @@ spm_path = 'D:\Dropbox\Code\MATLAB\Neuroimaging\SPM\spm12';
 % fullpaths
 src_dir = 'D:\olf_blind\source'; % source folder
 tgt_dir = 'D:\olf_blind\raw'; % target folder
-onset_files_dir = 'D:\olf_blind\source\Fichiers onset';
+opt.onset_files_dir = 'D:\olf_blind\source\Fichiers onset';
 
 
 %% Parameters definitions
 % select what to convert and transfer
-do_anat = 0;
+do_anat = 1;
 do_func = 1;
-do_dwi = 0;
+do_dwi = 1;
 
 
 opt.zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for
 % SPM users)
-opt.delete_json = 0; % in case you have already created the json files in
+opt.delete_json = 1; % in case you have already created the json files in
 % another way (or you have already put some in the root folder)
 opt.do = 1; % actually convert DICOMS, can be usefull to set to false
 % if only events files or something similar must be created
@@ -103,20 +102,29 @@ opt.task_name = {...
     'olfloc'; ...
     'rest'};
 opt.get_onset = [
-    0;... 
-    0;...
+    1;... 
+    1;...
     0];
 opt.get_stim = [
-    0;...
-    0;...
+    1;...
+    1;...
     0];
 opt.nb_folder = [;...
     2;...
     2;...
     1];
-
-% breath_pattern = '[Ii]den1';
-% breath_pattern = '[Ll]oc2';
+opt.stim_patterns = {...
+    '^Breathing.*[Ii]den[1-2].*.txt$'; ...
+    '^Breathing.*[Ll]oc[1-2].*.txt$' ;...
+    ''};
+opt.events_patterns = {...
+    '^Results.*.txt$';...
+    '^Results.*.txt$';...
+    ''};
+opt.events_src_file = {
+    1:2;...
+    3:4;...
+    []};
 
 opt.nb_dummies = 8; %9 MAX!!!!
 
@@ -179,8 +187,11 @@ create_dataset_description_json(tgt_dir, opt)
 subj_ls = dir(fullfile(src_dir, subject_dir_pattern));
 nb_sub = numel(subj_ls);
 
+% nb_sub = 2;
+
 for iSub = 1:nb_sub % for each subject
     
+    opt.iSub = iSub;
     
     % creating name of the subject ID (folder and filename)
     if strcmp(subj_ls(iSub).name(11), 'B')
@@ -214,13 +225,13 @@ for iSub = 1:nb_sub % for each subject
         pattern.output = opt.tgt_anat_dir_patterns{1};
         % we ask to return opt because that is where the age and gender of
         % the participants is stored
-        [opt, anat_tgt_dir] = convert_anat(sub_id, iSub, sub_src_dir, sub_tgt_dir, pattern, opt);
+        [opt, anat_tgt_dir] = convert_anat(sub_id, sub_src_dir, sub_tgt_dir, pattern, opt);
         
         
         %% do T2 olfactory bulb high-res image
         pattern.input = opt.src_anat_dir_patterns{2};
         pattern.output = opt.tgt_anat_dir_patterns{2};
-        convert_anat(sub_id, iSub, sub_src_dir, sub_tgt_dir, pattern, opt);
+        convert_anat(sub_id, sub_src_dir, sub_tgt_dir, pattern, opt);
         
         % clean up
         delete(fullfile(anat_tgt_dir, '*.mat'))
@@ -243,10 +254,11 @@ for iSub = 1:nb_sub % for each subject
             spm_jsonwrite(filename, content, opts)
         end
        
-        for task_idx = 1%:numel(opt.task_name)
+        for task_idx = 1:numel(opt.task_name)
+            fprintf('\n\n doing TASK: %s\n', opt.task_name{task_idx})
             create_events_json(tgt_dir, opt, task_idx)
             create_stim_json(tgt_dir, opt, task_idx)
-            [func_tgt_dir] = convert_func(sub_id, subj_ls, iSub, sub_src_dir, sub_tgt_dir, opt, task_idx);
+            [func_tgt_dir] = convert_func(sub_id, subj_ls, sub_src_dir, sub_tgt_dir, opt, task_idx);
         end
 
         % clean up
