@@ -59,13 +59,13 @@ clc
 % select what to convert and transfer
 do_anat = 1;
 do_func = 0;
-do_dwi = 0;
+do_dwi = 1;
 
-opt.zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for 
+opt.zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for
 % SPM users)
-opt.delete_json = 0; % in case you have already created the json files in 
+opt.delete_json = 0; % in case you have already created the json files in
 % another way (or you have already put some in the root folder)
-opt.do = 1; % actually covnert DICOMS, can be usefull to set to false 
+opt.do = 1; % actually covnert DICOMS, can be usefull to set to false
 % if only events files or something similar must be created
 
 % fullpath of the spm 12 folder
@@ -98,8 +98,14 @@ run_nb = [1 2 1 2]; % to give a number to each run depending on which task they 
 nb_dummies = 8; %9 MAX!!!!
 
 % Details for DWI
-src_dwi_dir_pattern = 'pa_dwi';
-src_bref_dir_pattern = 'ap_b0';
+opt.src_dwi_dir_patterns = {...
+    'pa_dwi', ...
+    'ap_b0'};
+opt.tgt_dwi_dir_patterns = {
+    '_dwi', ...
+    '_sbref'};
+opt.bvecval = [1 0];
+% opt.src_bref_dir_pattern = 'ap_b0';
 
 
 %% set path and directories
@@ -176,18 +182,19 @@ for iSub = 1:nb_sub % for each subject
         % we ask to return opt because that is where the age and gender of
         % the participants is stored
         [opt, anat_tgt_dir] = convert_anat(sub_id, iSub, sub_src_dir, sub_tgt_dir, pattern, opt);
-
+        
+        
         %% do T2 olfactory bulb high-res image
         pattern.input = opt.src_anat_dir_patterns{2};
         pattern.output = opt.tgt_anat_dir_patterns{2};
-%         convert_anat(sub_id, iSub, sub_src_dir, sub_tgt_dir, pattern, opt);
+        convert_anat(sub_id, iSub, sub_src_dir, sub_tgt_dir, pattern, opt);
         
         % clean up
         delete(fullfile(anat_tgt_dir, '*.mat'))
         if opt.delete_json
             delete(fullfile(anat_tgt_dir, '*.json'))
         end
- 
+        
     end
     
     
@@ -219,7 +226,7 @@ for iSub = 1:nb_sub % for each subject
         onset_files = spm_select('FPList', ...
             fullfile(onset_files_dir, subj_ls(iSub).name(11:end)), ...
             '^Results.*.txt$');
-
+        
         for iBold = 1:size(bold_dirs,1)
             
             func_src_dir = bold_dirs(iBold,:);
@@ -242,7 +249,7 @@ for iSub = 1:nb_sub % for each subject
                         [sub_id '_task-' task_name_2 '_run-' num2str(run_nb(iBold)) '_bold']);
                     breath_pattern = '[Ll]oc2';
             end
-
+            
             breathing_file = spm_select('FPList', ...
                 fullfile(onset_files_dir, subj_ls(iSub).name(11:end)), ...
                 ['^Breathing.*' breath_pattern '.*.txt$']);
@@ -285,7 +292,7 @@ for iSub = 1:nb_sub % for each subject
             fclose (fid);
             
             %% stim file
-   
+            
             % read content of breathing file
             fid = fopen (breathing_file, 'r');
             stim = textscan(fid,'%f%f%f%f%f', 'Delimiter', ',');
@@ -341,86 +348,37 @@ for iSub = 1:nb_sub % for each subject
     
     %% deal with diffusion imaging
     if do_dwi
+
+        %% do DWI
+        % we set the patterns in DICOM folder names too look for in the
+        % source folder
+        pattern.input = opt.src_dwi_dir_patterns{1};
+        % we set the pattern to in the target file in the BIDS data set
+        pattern.output = opt.tgt_dwi_dir_patterns{1};
+
+        bvecval = opt.bvecval(1);
         
-        % define source and target folder for dwi
-        dwi_src_dir = spm_select('FPList', sub_src_dir, 'dir', ...
-            ['^.*' src_dwi_dir_pattern '$']);
-        if size(dwi_src_dir,1)>1
-            error('more than one source dwi folder')
-        elseif size(dwi_src_dir,1)==1
-            dwi_tgt_dir = fullfile(sub_tgt_dir, 'dwi');
-            
-            % remove any Nifti files and json present
-            delete(fullfile(dwi_tgt_dir, '*.nii*'))
+        [dwi_tgt_dir] = convert_dwi(sub_id, sub_src_dir, sub_tgt_dir, bvecval, pattern, opt);
+
+        if opt.delete_json
             delete(fullfile(dwi_tgt_dir, '*.json'))
-            delete(fullfile(dwi_tgt_dir, '*.bv*'))
-            
-            % define target file names for dwi
-            dwi_tgt_name = fullfile(dwi_tgt_dir, [sub_id  '_dwi']);
-            
-            % convert
-            dicm2nii(dwi_src_dir, dwi_tgt_dir, 0)
-            % Give some time to zip the files before we rename them
-            pause(pauseTime)
-            
-            % Changes names of output image file
-            rename_tgt_file(dwi_tgt_dir, src_dwi_dir_pattern, dwi_tgt_name, 'nii');
-            rename_tgt_file(dwi_tgt_dir, src_dwi_dir_pattern, dwi_tgt_name, 'json');
-            rename_tgt_file(dwi_tgt_dir, src_dwi_dir_pattern, dwi_tgt_name, 'bvec');
-            rename_tgt_file(dwi_tgt_dir, src_dwi_dir_pattern, dwi_tgt_name, 'bval');
-            
-            % fix json content
-            fix_json_content([dwi_tgt_name '.json'])
-            
-            % reformat bval (remove double spaces)
-            bval = load([dwi_tgt_name '.bval']);
-            fid = fopen ([dwi_tgt_name '.bval'], 'w');
-            fprintf(fid, '%i ', bval);
-            fclose (fid); clear bval
-            
-            % reformat bvec (remove double spaces)
-            bvec = load([dwi_tgt_name '.bvec']);
-            fid = fopen ([dwi_tgt_name '.bvec'], 'w');
-            fprintf(fid, '%f ', bvec(1,:));
-            fprintf(fid, '\n');
-            fprintf(fid, '%f ', bvec(2,:));
-            fprintf(fid, '\n');
-            fprintf(fid, '%f ', bvec(3,:));
-            fclose (fid); clear bvec
-            
-            if opt.delete_json
-                delete(fullfile(dwi_tgt_dir, '*.json'))
-            end
-            
-            %% do b_ref
-            % define source and target folder for bref
-            bref_dirs = spm_select('FPList', sub_src_dir, 'dir', ...
-                src_bref_dir_pattern);
-            if size(bref_dirs,1)>1
-                error('more than one source bref folder')
-            end
-            
-            % define target file names for func
-            bref_tgt_name = fullfile(dwi_tgt_dir, [sub_id  '_sbref']);
-            
-            % convert
-            dicm2nii(bref_dirs, dwi_tgt_dir, opt.zip_output)
-            % Give some time to zip the files before we rename them
-            pause(pauseTime)
-            
-            % Changes names of output image file
-            rename_tgt_file(dwi_tgt_dir, src_bref_dir_pattern, bref_tgt_name, 'nii');
-            rename_tgt_file(dwi_tgt_dir, src_bref_dir_pattern, bref_tgt_name, 'json');
-            
-            % fix json content
-            fix_json_content([bref_tgt_name '.json'])
-            
-            % clean up
-            delete(fullfile(dwi_tgt_dir, '*.mat'))
-            delete(fullfile(dwi_tgt_dir, '*.txt'))
-            clear tgt_file dwi_tgt_name dwi_src_dir dwi_tgt_dir dwi_dirs
-            
         end
+        
+        %% do b_ref
+        pattern.input = opt.src_dwi_dir_patterns{2};
+        % we set the pattern to in the target file in the BIDS data set
+        pattern.output = opt.tgt_dwi_dir_patterns{2};
+
+        bvecval = opt.bvecval(2);
+        
+        convert_dwi(sub_id, sub_src_dir, sub_tgt_dir, bvecval, pattern, opt);
+        
+
+        %% clean up
+        delete(fullfile(dwi_tgt_dir, '*.mat'))
+        delete(fullfile(dwi_tgt_dir, '*.txt'))
+        
+        
         
     end
     
@@ -431,3 +389,7 @@ end
 if do_anat
     create_participants_tsv(tgt_dir, ls_sub_id, opt.age, opt.gender);
 end
+
+message = 'REMEMBER TO CHECK IF YOU HAVE A VALID BIDS DATA SET BY USING THE BIDS VALIDATOR:';
+bids_validator_URL = 'https://bids-standard.github.io/bids-validator/';
+fprintf('\n\n%s\n\n%s\n\n', message, bids_validator_URL)
