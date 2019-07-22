@@ -40,6 +40,7 @@
 % anatomical (sex and age) so it might not be accurate
 
 % TO DO
+% - documentation !!!!!
 % - extract participant weight from header and put in tsv file?
 % - make sure that all parts that should be tweaked (or hard coded are in separate functions)
 % - subject renaming should be more flexible
