@@ -11,6 +11,10 @@ function fix_json_content(json_file_name)
             content = rmfield(content, field_names(i_field));
         end
         
+        if isfield(content, 'NiftiCreator')
+            content = rmfield(content, 'NiftiCreator');
+        end
+
         if isfield(content, 'PhaseEncodingDirection')
             switch content.PhaseEncodingDirection
                 case 'x'

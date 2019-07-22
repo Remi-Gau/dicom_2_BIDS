@@ -9,5 +9,6 @@ filename = fullfile(tgt_dir, ['task-' task '_stim.json']);
 content.SamplingFrequency = 24.875;
 content.StartTime = nb_dummies * RepetitionTime * -1;
 content.Columns = {'breath', 'stimulus', 'FIIK3', 'FIIK4', 'response'};
+% FIIK: fuck if I know
 
 spm_jsonwrite(filename, content, opts)
