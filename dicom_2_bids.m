@@ -15,8 +15,7 @@
 % at the moment this script is not super flexible and assumes only one session
 % and can only deal with anatomical functional and DWI.
 
-% it also makes some assumption on the number of DWI, ANAT, resting state
-% runs (only takes 1).
+% it also makes some assumption on the number of DWI, ANAT runs (only takes 1).
 
 % the way the subject naming happens is hardcoded
 
@@ -66,27 +65,22 @@ onset_files_dir = 'D:\olf_blind\source\Fichiers onset';
 
 %% Parameters definitions
 % select what to convert and transfer
-do_anat = 1;
-do_func = 0;
-do_dwi = 1;
+do_anat = 0;
+do_func = 1;
+do_dwi = 0;
+
 
 opt.zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for
 % SPM users)
 opt.delete_json = 0; % in case you have already created the json files in
 % another way (or you have already put some in the root folder)
-opt.do = 1; % actually covnert DICOMS, can be usefull to set to false
+opt.do = 1; % actually convert DICOMS, can be usefull to set to false
 % if only events files or something similar must be created
 
-% fullpath of the spm 12 folder
-spm_path = 'D:\Dropbox\Code\MATLAB\Neuroimaging\SPM\spm12';
-
-% fullpaths
-src_dir = 'D:\olf_blind\source'; % source folder
-tgt_dir = 'D:\olf_blind\raw'; % target folder
-onset_files_dir = 'D:\olf_blind\source\Fichiers onset';
 
 % DICOM folder patterns to look for
 subject_dir_pattern = 'Olf_BLind*';
+
 
 % Details for ANAT
 % target folders to convert
@@ -129,8 +123,6 @@ if any(~[strcmp(a, 'SPM12') strcmp(b, '7487')])
     warning(str)
 end
 clear a b
-
-addpath(fullfile(pwd,'dicm2nii'))
 
 mkdir(tgt_dir)
 

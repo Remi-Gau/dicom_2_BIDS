@@ -1,5 +1,7 @@
 function create_dataset_description_json(tgt_dir, opt)
 
+opts.indent = opt.indent;
+
 dataset_description_json_name = fullfile(tgt_dir, ...
     'dataset_description.json');
 
@@ -49,6 +51,6 @@ if ~isdir(jsonSaveDir)
     fprintf('Warning: directory to save json file does not exist: %s \n',jsonSaveDir)
 end
 
-spm_jsonwrite(dataset_description_json_name,dd_json, opt)
+spm_jsonwrite(dataset_description_json_name,dd_json, opts)
 
 end
