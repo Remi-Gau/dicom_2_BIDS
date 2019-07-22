@@ -1,4 +1,4 @@
-function create_dataset_description_json(tgt_dir)
+function create_dataset_description_json(tgt_dir, opt)
 
 dataset_description_json_name = fullfile(tgt_dir, ...
     'dataset_description.json');
@@ -44,14 +44,11 @@ dd_json.DatasetDOI = ''; %the Document Object Identifier of the dataset
 
 %% Write JSON
 
-json_options.indent = '    '; % this just makes the json file look prettier 
-% when opened in a text editor
-
 jsonSaveDir = fileparts(dataset_description_json_name);
 if ~isdir(jsonSaveDir)
     fprintf('Warning: directory to save json file does not exist: %s \n',jsonSaveDir)
 end
 
-spm_jsonwrite(dataset_description_json_name,dd_json,json_options)
+spm_jsonwrite(dataset_description_json_name,dd_json, opt)
 
 end

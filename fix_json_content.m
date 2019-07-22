@@ -1,6 +1,4 @@
-function fix_json_content(json_file_name)
-
-        opts.indent = '    ';
+function fix_json_content(json_file_name, opt)
 
         content = spm_jsonread(json_file_name);
         
@@ -32,5 +30,5 @@ function fix_json_content(json_file_name)
             end
         end
         
-        spm_jsonwrite(json_file_name, content, opts)
+        spm_jsonwrite(json_file_name, content, opt)
 end

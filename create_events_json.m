@@ -1,6 +1,4 @@
-function create_events_json(tgt_dir, task)
-
-opts.indent = '    ';
+function create_events_json(tgt_dir, task, opt)
 
 filename = fullfile(tgt_dir, ['task-' task '_events.json']);
 
@@ -24,4 +22,4 @@ content.odorant = struct(...
     'Units', ' ',...
     'TermURL', ' ');
 
-spm_jsonwrite(filename, content, opts)
+spm_jsonwrite(filename, content, opt)

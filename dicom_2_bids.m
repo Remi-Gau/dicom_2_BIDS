@@ -24,7 +24,7 @@
 % dicom source folder and put in a 'dummy' folder) so that dicm2nii does
 % not "see" them
 
-% the way event.tsv files are generated is very unflexible (line 210-230)
+% the way event.tsv files are generated is very unflexible
 % also the stimulus onset is not yet recalculated depending on the number
 % of dummies removed
 
@@ -54,8 +54,17 @@
 clear
 clc
 
+%% Set directories
+% fullpath of the spm 12 folder
+spm_path = 'D:\Dropbox\Code\MATLAB\Neuroimaging\SPM\spm12';
 
-%% parameters definitions
+% fullpaths
+src_dir = 'D:\olf_blind\source'; % source folder
+tgt_dir = 'D:\olf_blind\raw'; % target folder
+onset_files_dir = 'D:\olf_blind\source\Fichiers onset';
+
+
+%% Parameters definitions
 % select what to convert and transfer
 do_anat = 1;
 do_func = 0;
@@ -140,13 +149,11 @@ end
 %% let's do this
 
 % create general json and data dictionary files
-create_dataset_description_json(tgt_dir)
+create_dataset_description_json(tgt_dir, opt)
 
 % get list of subjsects
 subj_ls = dir(fullfile(src_dir, subject_dir_pattern));
 nb_sub = numel(subj_ls);
-
-List_problematic_files = {};
 
 for iSub = 1:nb_sub % for each subject
     
@@ -202,7 +209,6 @@ for iSub = 1:nb_sub % for each subject
     if do_func
         
         if nb_dummies > 0
-            opts.indent = '    ';
             filename = fullfile(tgt_dir, 'discarded_dummy.json');
             content.NumberOfVolumesDiscardedByUser = nb_dummies;
             spm_jsonwrite(filename, content, opts)
@@ -344,6 +350,7 @@ for iSub = 1:nb_sub % for each subject
             delete(fullfile(func_tgt_dir, '*.json'))
         end
         clear tgt_file func_tgt_name func_src_dir func_tgt_dir bold_dirs
+        
     end
     
     %% deal with diffusion imaging
@@ -377,8 +384,7 @@ for iSub = 1:nb_sub % for each subject
         %% clean up
         delete(fullfile(dwi_tgt_dir, '*.mat'))
         delete(fullfile(dwi_tgt_dir, '*.txt'))
-        
-        
+
         
     end
     
