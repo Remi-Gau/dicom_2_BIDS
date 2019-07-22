@@ -9,16 +9,16 @@
 % in theory a lot of the parameters can be changed in the parameters
 % section at the beginning of the script
 
-% in general make sure you ahve removed from your subjects source folder
+% in general make sure you have removed from your subjects source folder
 % any folder that you do not want to convert (interrupted sequences for example)
 
 % at the moment this script is not super flexible and assumes only one session
-% and can only deal with anatomical T1, functional (bold and rest) and DWI.
+% and can only deal with anatomical functional and DWI.
 
 % it also makes some assumption on the number of DWI, ANAT, resting state
 % runs (only takes 1).
 
-% the way the subject naming happens is hardcoded (line 90-100).
+% the way the subject naming happens is hardcoded
 
 % the script can remove up to 9 dummy scans (they are directly moved from the
 % dicom source folder and put in a 'dummy' folder) so that dicm2nii does
@@ -31,7 +31,7 @@
 % there will still some cleaning up to do in the json files: for example
 % most likely you will only want to have json files in the root folder and
 % that apply to all inferior levels rather than one json file per nifti
-% file
+% file (make use of the inheritance principle)
 
 % json files created will be modified to remove any field with 'Patient' in
 % it and the phase encoding direction will be re-encoded in a BIDS
@@ -43,8 +43,12 @@
 % TO DO
 % - extract participant weight from header and put in tsv file?
 % - refactor the different sections anat, func, dwi
+%   - make sure that all parts that should be tweaked (or hard coded are in separate functions)
 % - subject renaming should be more flexible
 % - allow for removal of more than 9 dummy scans
+% - move json file of each modality into the source folder
+% - deal with sessions
+
 
 
 clear
@@ -53,23 +57,21 @@ clc
 
 %% parameters definitions
 % select what to convert and transfer
-do_anat = 0;
-do_func = 1;
+do_anat = 1;
+do_func = 0;
 do_dwi = 0;
 
-nb_dummies = 8; %9 MAX!!!!
-
-zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for SPM users)
-delete_json = 1; % in case you have already created the json files in another way (or you ahve already put some in the root folder)
-
-task_name_1 = 'olfid';
-task_name_2 = 'olfloc';
-run_nb = [1 2 1 2]; % to give a number to each run depending on which task they belong to
+opt.zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for 
+% SPM users)
+opt.delete_json = 0; % in case you have already created the json files in 
+% another way (or you have already put some in the root folder)
+opt.do = 1; % actually covnert DICOMS, can be usefull to set to false 
+% if only events files or something similar must be created
 
 % fullpath of the spm 12 folder
 spm_path = 'D:\Dropbox\Code\MATLAB\Neuroimaging\SPM\spm12';
 
-%fullpaths
+% fullpaths
 src_dir = 'D:\olf_blind\source'; % source folder
 tgt_dir = 'D:\olf_blind\raw'; % target folder
 onset_files_dir = 'D:\olf_blind\source\Fichiers onset';
@@ -77,12 +79,25 @@ onset_files_dir = 'D:\olf_blind\source\Fichiers onset';
 % DICOM folder patterns to look for
 subject_dir_pattern = 'Olf_BLind*';
 
-src_anat_dir_pattern = 'acq-mprage_T1w';
-src_T2_dir_pattern = 'acq-tse_t2-tse-cor-448-2mm-FOV140_run';
+% Details for ANAT
+% target folders to convert
+opt.src_anat_dir_patterns = {
+    'acq-mprage_T1w', ...
+    'acq-tse_t2-tse-cor-448-2mm-FOV140_run'};
+% corresponding names for the output file in BIDS data set
+opt.tgt_anat_dir_patterns = {
+    '_T1w', ...
+    '_acq-tse_T2w'};
 
+% Details for FUNC
 src_func_dir_pattern = 'bold_run';
 src_rs_dir_pattern = 'bold_RS';
+task_name_1 = 'olfid';
+task_name_2 = 'olfloc';
+run_nb = [1 2 1 2]; % to give a number to each run depending on which task they belong to
+nb_dummies = 8; %9 MAX!!!!
 
+% Details for DWI
 src_dwi_dir_pattern = 'pa_dwi';
 src_bref_dir_pattern = 'ap_b0';
 
@@ -90,6 +105,16 @@ src_bref_dir_pattern = 'ap_b0';
 %% set path and directories
 addpath(spm_path)
 spm('defaults','fmri')
+% check spm version
+[a, b] = spm('ver');
+if any(~[strcmp(a, 'SPM12') strcmp(b, '7487')])
+    str = sprintf('%s\n%s', ...
+        'The current version SPM version is not SPM12 7487.', ...
+        'In case of problems (e.g json file related) consider updating.');
+    warning(str)
+end
+clear a b
+
 addpath(fullfile(pwd,'dicm2nii'))
 
 mkdir(tgt_dir)
@@ -99,10 +124,10 @@ setpref('dicm2nii_gui_para', 'save_patientName', false);
 setpref('dicm2nii_gui_para', 'save_json', true);
 
 % Give some time to zip the files before we rename them
-if zip_output
-    PauseTime = 30; %#ok<*UNRCH>
+if opt.zip_output
+    opt.pauseTime = 30; %#ok<*UNRCH>
 else
-    PauseTime = 1;
+    opt.pauseTime = 1;
 end
 
 
@@ -110,19 +135,6 @@ end
 
 % create general json and data dictionary files
 create_dataset_description_json(tgt_dir)
-create_events_json(tgt_dir, task_name_1)
-create_events_json(tgt_dir, task_name_2)
-create_stim_json(tgt_dir, task_name_1, nb_dummies)
-create_stim_json(tgt_dir, task_name_2, nb_dummies)
-
-
-if nb_dummies > 0
-    opts.indent = '    ';
-    filename = fullfile(tgt_dir, 'discarded_dummy.json');
-    content.NumberOfVolumesDiscardedByUser = nb_dummies;
-    spm_jsonwrite(filename, content, opts)
-end
-
 
 % get list of subjsects
 subj_ls = dir(fullfile(src_dir, subject_dir_pattern));
@@ -155,84 +167,44 @@ for iSub = 1:nb_sub % for each subject
     %% Anatomy folders
     if do_anat
         
-        % define source and target folder for anat
-        ls_dir = spm_select('FPList', sub_src_dir, 'dir', src_anat_dir_pattern);
-        if size(ls_dir,1)==1
-            anat_src_dir = ls_dir;
-        else
-            error('more than one source anat folder')
-        end
-        anat_tgt_dir = fullfile(sub_tgt_dir, 'anat');
-        
-        % define target file names for anat
-        anat_tgt_name = fullfile(anat_tgt_dir, [sub_id '_T1w']);
-        
-        % Remove any nifti files and json present in the target folder to start
-        % from a blank slate
-        delete(fullfile(anat_tgt_dir, '*.nii*'))
-        delete(fullfile(anat_tgt_dir, '*.json'))
-        
-        % Convert files (0 is for 4D unzipped files)
-        dicm2nii(anat_src_dir, anat_tgt_dir, 0);
-        % Give some time to zip the files before we rename them
-        pause(PauseTime/4)
-        
-        % rename json and .nii output files
-        rename_tgt_file(anat_tgt_dir, src_anat_dir_pattern, anat_tgt_name, 'nii');
-        rename_tgt_file(anat_tgt_dir, src_anat_dir_pattern, anat_tgt_name, 'json');
-        
-        % try to get age and gender from json file
-        content = spm_jsonread([anat_tgt_name '.json']);
-        try
-            gender{iSub} = content.PatientSex;
-            age(iSub) = str2double(content.PatientAge(1:3));
-        catch
-            warning('Could not get participant age or gender.')
-            gender{iSub} = '?';
-            age(iSub) = NaN;
-        end
-        
-        % fix json content
-        fix_json_content([anat_tgt_name '.json'])
-        
+        %% do T1w
+        % we set the patterns in DICOM folder names too look for in the
+        % source folder
+        pattern.input = opt.src_anat_dir_patterns{1};
+        % we set the pattern to in the target file in the BIDS data set
+        pattern.output = opt.tgt_anat_dir_patterns{1};
+        % we ask to return opt because that is where the age and gender of
+        % the participants is stored
+        [opt, anat_tgt_dir] = convert_anat(sub_id, iSub, sub_src_dir, sub_tgt_dir, pattern, opt);
 
         %% do T2 olfactory bulb high-res image
-                % define source and target folder for anat
-        ls_dir = spm_select('FPList', sub_src_dir, 'dir', src_T2_dir_pattern);
-        if size(ls_dir,1)>1
-            warning('More than one source high-res olfactory bulb T2 image folder. Will skip it for now.')
-        elseif size(ls_dir,1)==1
-            
-            T2_src_dir = ls_dir;
-            
-            % define target file names for anat
-            T2_tgt_name = fullfile(anat_tgt_dir, [sub_id '_acq-tse_T2w']);
-            
-            % Convert files (0 is for 4D unzipped files)
-            dicm2nii(T2_src_dir, anat_tgt_dir, 0);
-            % Give some time to zip the files before we rename them
-            pause(PauseTime/4)
-            
-            % rename json and .nii output files
-            rename_tgt_file(anat_tgt_dir, src_T2_dir_pattern, T2_tgt_name, 'nii');
-            rename_tgt_file(anat_tgt_dir, src_T2_dir_pattern, T2_tgt_name, 'json');
-            
-            % fix json content
-            fix_json_content([T2_tgt_name '.json'])
-        end
+        pattern.input = opt.src_anat_dir_patterns{2};
+        pattern.output = opt.tgt_anat_dir_patterns{2};
+%         convert_anat(sub_id, iSub, sub_src_dir, sub_tgt_dir, pattern, opt);
         
         % clean up
         delete(fullfile(anat_tgt_dir, '*.mat'))
-        if delete_json
+        if opt.delete_json
             delete(fullfile(anat_tgt_dir, '*.json'))
         end
-        clear anat_tgt_name anat_tgt_json_name anat_src_dir anat_tgt_dir content
-        
+ 
     end
     
     
     %% BOLD series
     if do_func
+        
+        if nb_dummies > 0
+            opts.indent = '    ';
+            filename = fullfile(tgt_dir, 'discarded_dummy.json');
+            content.NumberOfVolumesDiscardedByUser = nb_dummies;
+            spm_jsonwrite(filename, content, opts)
+        end
+        
+        create_events_json(tgt_dir, task_name_1)
+        create_events_json(tgt_dir, task_name_2)
+        create_stim_json(tgt_dir, task_name_1, nb_dummies)
+        create_stim_json(tgt_dir, task_name_2, nb_dummies)
         
         % define source and target folder for func
         bold_dirs = spm_select('FPList', sub_src_dir, 'dir', [src_func_dir_pattern '-[0-9]$']);
@@ -279,9 +251,9 @@ for iSub = 1:nb_sub % for each subject
             discard_dummies(func_src_dir, nb_dummies, subj_ls, iSub)
             
             % convert files
-            dicm2nii(func_src_dir, func_tgt_dir, 0)
+            dicm2nii(func_src_dir, func_tgt_dir, opt.zip_output)
             % give some time to zip the files before we rename them
-            pause(PauseTime)
+            pause(pauseTime)
             
             % changes names of output image file
             rename_tgt_file(func_tgt_dir, src_func_dir_pattern, func_tgt_name, 'nii');
@@ -347,9 +319,9 @@ for iSub = 1:nb_sub % for each subject
             discard_dummies(rs_dirs, nb_dummies, subj_ls, iSub)
             
             % convert
-            % dicm2nii(rs_dirs, func_tgt_dir, 0)
-            give some time to zip the files before we rename them
-            pause(PauseTime)
+            dicm2nii(rs_dirs, func_tgt_dir, opt.zip_output)
+            % give some time to zip the files before we rename them
+            pause(pauseTime)
             
             % changes names of output image file
             rename_tgt_file(func_tgt_dir, src_rs_dir_pattern, rs_tgt_name, 'nii');
@@ -361,7 +333,7 @@ for iSub = 1:nb_sub % for each subject
         
         % clean up
         delete(fullfile(func_tgt_dir, '*.mat'))
-        if delete_json
+        if opt.delete_json
             delete(fullfile(func_tgt_dir, '*.json'))
         end
         clear tgt_file func_tgt_name func_src_dir func_tgt_dir bold_dirs
@@ -389,7 +361,7 @@ for iSub = 1:nb_sub % for each subject
             % convert
             dicm2nii(dwi_src_dir, dwi_tgt_dir, 0)
             % Give some time to zip the files before we rename them
-            pause(PauseTime)
+            pause(pauseTime)
             
             % Changes names of output image file
             rename_tgt_file(dwi_tgt_dir, src_dwi_dir_pattern, dwi_tgt_name, 'nii');
@@ -416,7 +388,7 @@ for iSub = 1:nb_sub % for each subject
             fprintf(fid, '%f ', bvec(3,:));
             fclose (fid); clear bvec
             
-            if delete_json
+            if opt.delete_json
                 delete(fullfile(dwi_tgt_dir, '*.json'))
             end
             
@@ -432,9 +404,9 @@ for iSub = 1:nb_sub % for each subject
             bref_tgt_name = fullfile(dwi_tgt_dir, [sub_id  '_sbref']);
             
             % convert
-            dicm2nii(bref_dirs, dwi_tgt_dir, 0)
+            dicm2nii(bref_dirs, dwi_tgt_dir, opt.zip_output)
             % Give some time to zip the files before we rename them
-            pause(PauseTime)
+            pause(pauseTime)
             
             % Changes names of output image file
             rename_tgt_file(dwi_tgt_dir, src_bref_dir_pattern, bref_tgt_name, 'nii');
@@ -457,5 +429,5 @@ end
 
 %% print participants.tsv file
 if do_anat
-    create_participants_tsv(tgt_dir, ls_sub_id, age, gender);
+    create_participants_tsv(tgt_dir, ls_sub_id, opt.age, opt.gender);
 end
