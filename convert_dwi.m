@@ -24,17 +24,8 @@ if opt.do
     % define target file names for dwi
     dwi_tgt_name = fullfile(dwi_tgt_dir, [sub_id  pattern.output]);
     
-    % convert
-    dicm2nii(dwi_src_dir, dwi_tgt_dir, opt.zip_output)
-    % Give some time to zip the files before we rename them
-    pause(opt.pauseTime)
-    
-    % Changes names of output image file
-    rename_tgt_file(dwi_tgt_dir, pattern.input, dwi_tgt_name, 'nii');
-    rename_tgt_file(dwi_tgt_dir, pattern.input, dwi_tgt_name, 'json');
-    
-    % fix json content
-    fix_json_content([dwi_tgt_name '.json'])
+    % do the conversion and rename the output files and fix json content
+    conversion_do(dwi_src_dir, dwi_tgt_dir, dwi_tgt_name, pattern, opt)
     
     if bvecval
         

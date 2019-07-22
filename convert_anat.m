@@ -22,20 +22,12 @@ if opt.do
     delete(fullfile(anat_tgt_dir, '*.nii*'))
     delete(fullfile(anat_tgt_dir, '*.json'))
     
-    % convert files (0 is for 4D unzipped files)
-    dicm2nii(anat_src_dir, anat_tgt_dir, opt.zip_output);
-    % give some time to zip the files before we rename them
-    pause(opt.pauseTime/4)
-    
-    % rename json and .nii output files
-    rename_tgt_file(anat_tgt_dir, pattern.input, anat_tgt_name, 'nii');
-    rename_tgt_file(anat_tgt_dir, pattern.input, anat_tgt_name, 'json');
+    % do the conversion and rename the output files and fix json content
+    conversion_do(anat_src_dir, anat_tgt_dir, anat_tgt_name, pattern, opt)
     
     % try to get age and gender from json file
     opt = get_participant_info(opt, iSub, anat_tgt_name);
-    
-    % fix json content
-    fix_json_content([anat_tgt_name '.json']);
+
 end
 
 end
