@@ -25,7 +25,7 @@ if opt.do
     dwi_tgt_name = fullfile(dwi_tgt_dir, [sub_id  pattern.output]);
     
     % do the conversion and rename the output files and fix json content
-    conversion_do(dwi_src_dir, dwi_tgt_dir, dwi_tgt_name, pattern, opt)
+    conversion_do(dwi_src_dir, dwi_tgt_dir, dwi_tgt_name, pattern, opt);
     
     if bvecval
         

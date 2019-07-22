@@ -1,4 +1,4 @@
-function [func_tgt_dir] = convert_func(sub_id, subj_ls, iSub, sub_src_dir, sub_tgt_dir, opt, task_idx)
+function [func_tgt_dir] = convert_func(sub_id, subj_ls, sub_src_dir, sub_tgt_dir, opt, task_idx)
 
 get_onset = opt.get_onset(task_idx);
 get_stim = opt.get_stim(task_idx);
