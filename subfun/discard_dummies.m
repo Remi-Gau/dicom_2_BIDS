@@ -7,7 +7,7 @@ dummy_dir = [deblank(func_src_dir) '-dummy'];
 % first we bring them back into the main pool in case the
 % number of dummies we want to set aside has changed since last
 % time we ran the conversion
-if isfolder(dummy_dir)
+if exist(dummy_dir, 'dir')
     dummies = spm_select('FPList', dummy_dir, ...
         '^.*.dcm$');
     for i_dummy = 1:size(dummies,1)

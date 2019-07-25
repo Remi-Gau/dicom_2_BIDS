@@ -75,7 +75,7 @@ opt.zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for
 % SPM users)
 opt.delete_json = 1; % in case you have already created the json files in
 % another way (or you have already put some in the root folder)
-opt.do = 0; % actually convert DICOMS, can be usefull to set to false
+opt.do = 1; % actually convert DICOMS, can be usefull to set to false
 % if only events files or something similar must be created
 
 
@@ -190,7 +190,7 @@ create_dataset_description_json(tgt_dir, opt)
 subj_ls = dir(fullfile(src_dir, subject_dir_pattern));
 nb_sub = numel(subj_ls);
 
-for iSub = 1:nb_sub % for each subject
+for iSub = 19:nb_sub % for each subject
     
     opt.iSub = iSub;
     
