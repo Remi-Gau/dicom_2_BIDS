@@ -9,18 +9,19 @@ stim_pattern = opt.stim_patterns{task_idx};
 events_pattern = opt.events_patterns{task_idx};...
 event_file2choose = opt.events_src_file{task_idx};
 
-% define source and target folder for func
-bold_dirs = spm_select('FPList', sub_src_dir, 'dir', [pattern.input '$']);
-if size(bold_dirs,1)~=nb_folder
-    disp(bold_dirs)
-    warning('More than the required number of source func folders for that task')
-    create_log_file(sub_id, sub_src_dir, ['_task-' pattern.output], bold_dirs)
-end
-
 func_tgt_dir = fullfile(sub_tgt_dir, 'func');
 
+% define source and target folder for func
 % Remove any nifti / json / tsv files present related to this task
 if opt.do
+    
+    bold_dirs = spm_select('FPList', sub_src_dir, 'dir', [pattern.input '$']);
+    if size(bold_dirs,1)~=nb_folder
+        disp(bold_dirs)
+        warning('More than the required number of source func folders for that task')
+        create_log_file(sub_id, sub_src_dir, ['_task-' pattern.output], bold_dirs)
+    end
+
     delete(fullfile(func_tgt_dir, ['*' pattern.output '*.nii*']))
     delete(fullfile(func_tgt_dir, ['*' pattern.output '*.json*']))
 end
@@ -31,6 +32,11 @@ if get_onset
     onset_files = spm_select('FPList', ...
         fullfile(opt.onset_files_dir, subj_ls(opt.iSub).name(11:end)), ...
         events_pattern);
+    if size(onset_files,1)~=sum(cellfun(@numel, opt.events_src_file))
+        disp(onset_files)
+        warning('More than the required number of source onset files')
+        create_log_file(sub_id, sub_src_dir, ['_task-' pattern.output], onset_files)
+    end
     onset_files = onset_files(event_file2choose,:);
 end
 
@@ -40,17 +46,23 @@ if get_stim
     stim_files = spm_select('FPList', ...
         fullfile(opt.onset_files_dir, subj_ls(opt.iSub).name(11:end)), ...
         stim_pattern);
+    if size(stim_files,1)~=nb_folder
+        disp(stim_files)
+        warning('More than the required number of source stim files for that task')
+        create_log_file(sub_id, sub_src_dir, ['_task-' pattern.output], stim_files)
+    end
 end
 
 % do the conversion
 for iBold = 1:nb_folder
-    
-    func_src_dir = bold_dirs(iBold,:);
-    
+
     func_tgt_name = fullfile(func_tgt_dir, ...
         [sub_id '_task-' pattern.output '_run-' num2str(iBold) '_bold']);
     
     if opt.do
+        
+        func_src_dir = bold_dirs(iBold,:);
+
         % set dummies aside
         discard_dummies(func_src_dir, opt.nb_dummies, subj_ls, opt.iSub);
         
