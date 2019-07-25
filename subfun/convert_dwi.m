@@ -5,7 +5,8 @@ dwi_src_dir = spm_select('FPList', sub_src_dir, 'dir', ...
     ['^.*' pattern.input '$']);
 if size(dwi_src_dir,1)~=1
     disp(dwi_src_dir)
-    error('more than one or no source dwi folder')
+    warning('more than one or no source dwi folder')
+    create_log_file(sub_id, sub_src_dir, ['_dwi-' pattern.output], dwi_src_dir)
 end
 
 dwi_tgt_dir = fullfile(sub_tgt_dir, 'dwi');

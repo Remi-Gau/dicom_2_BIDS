@@ -55,12 +55,13 @@ clc
 
 %% Set directories
 % fullpath of the spm 12 folder
-spm_path = 'D:\Dropbox\Code\MATLAB\Neuroimaging\SPM\spm12';
+spm_path = '/home/remi-gau/Documents/SPM/spm12';
+
 
 % fullpaths
-src_dir = 'D:\olf_blind\source'; % source folder
-tgt_dir = 'D:\olf_blind\raw'; % target folder
-opt.onset_files_dir = 'D:\olf_blind\source\Fichiers onset';
+src_dir = '/mnt/data/christine/olf_blind/source/MRI'; % source folder
+tgt_dir = '/mnt/data/christine/olf_blind/raw'; % target folder
+opt.onset_files_dir = '/mnt/data/christine/olf_blind/source/Results';
 
 
 %% Parameters definitions
@@ -74,12 +75,12 @@ opt.zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for
 % SPM users)
 opt.delete_json = 1; % in case you have already created the json files in
 % another way (or you have already put some in the root folder)
-opt.do = 1; % actually convert DICOMS, can be usefull to set to false
+opt.do = 0; % actually convert DICOMS, can be usefull to set to false
 % if only events files or something similar must be created
 
 
 % DICOM folder patterns to look for
-subject_dir_pattern = 'Olf_BLind*';
+subject_dir_pattern = 'Olf_Blind*';
 
 
 % Details for ANAT
@@ -103,8 +104,8 @@ opt.task_name = {...
     'olfloc'; ...
     'rest'};
 opt.get_onset = [
-    1;... 
-    1;...
+    0;... 
+    0;...
     0];
 opt.get_stim = [
     1;...
@@ -311,7 +312,7 @@ end
 
 
 %% print participants.tsv file
-if do_anat
+if do_anat && opt.do
     create_participants_tsv(tgt_dir, ls_sub_id, opt.age, opt.gender);
 end
 

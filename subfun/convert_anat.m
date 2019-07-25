@@ -8,7 +8,8 @@ if size(ls_dir,1)==1
     anat_src_dir = ls_dir;
 else
     disp(ls_dir)
-    error('more than one source anat folder for the pattern %s', pattern.input)
+    warning('more than one source anat folder for the pattern %s', pattern.input)
+    create_log_file(sub_id, sub_src_dir, ['_anat-' pattern.output], ls_dir)
 end
 anat_tgt_dir = fullfile(sub_tgt_dir, 'anat');
 

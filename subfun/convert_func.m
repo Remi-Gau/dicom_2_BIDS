@@ -13,7 +13,8 @@ event_file2choose = opt.events_src_file{task_idx};
 bold_dirs = spm_select('FPList', sub_src_dir, 'dir', [pattern.input '$']);
 if size(bold_dirs,1)~=nb_folder
     disp(bold_dirs)
-    error('More than the required number of source func folders for that task')
+    warning('More than the required number of source func folders for that task')
+    create_log_file(sub_id, sub_src_dir, ['_task-' pattern.output], bold_dirs)
 end
 
 func_tgt_dir = fullfile(sub_tgt_dir, 'func');
@@ -42,7 +43,7 @@ if get_stim
 end
 
 % do the conversion
-for iBold = 1:size(bold_dirs,1)
+for iBold = 1:nb_folder
     
     func_src_dir = bold_dirs(iBold,:);
     
@@ -58,14 +59,14 @@ for iBold = 1:size(bold_dirs,1)
     
     %% events file
     if get_onset
-        input_file = onset_files(iBold,:);
+        input_file = deblank(onset_files(iBold,:));
         output_file = [func_tgt_name(1:end-4) 'events.tsv'];
         create_events_file(input_file, output_file)
     end
     
     %% stim file
     if get_stim
-        input_file = stim_files(iBold,:);
+        input_file = deblank(stim_files(iBold,:));
         output_file = [func_tgt_name(1:end-4) 'stim.tsv'];
         create_stim_file(input_file, output_file)
     end
