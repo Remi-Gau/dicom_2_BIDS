@@ -55,32 +55,37 @@ clc
 
 %% Set directories
 % fullpath of the spm 12 folder
-spm_path = '/home/remi-gau/Documents/SPM/spm12';
+% spm_path = '/home/remi-gau/Documents/SPM/spm12';
 
+spm_path = 'D:\Dropbox\Code\MATLAB\Neuroimaging\SPM\spm12';
 
 % fullpaths
-src_dir = '/home/remi-gau/BIDS/Olf_Blind/source/DICOM'; % source folder
-tgt_dir = '/home/remi-gau/BIDS/Olf_Blind/raw'; % target folder
-opt.onset_files_dir = '/home/remi-gau/BIDS/Olf_Blind/source/Results';
+% src_dir = '/home/remi-gau/BIDS/Olf_Blind/source/DICOM'; % source folder
+% tgt_dir = '/home/remi-gau/BIDS/Olf_Blind/raw'; % target folder
+% opt.onset_files_dir = '/home/remi-gau/BIDS/Olf_Blind/source/Results';
+
+src_dir = 'D:\Dropbox\BIDS\olf_blind\source\DICOM'; % source folder
+tgt_dir = 'D:\Dropbox\BIDS\olf_blind\source\raw'; % target folder
+opt.onset_files_dir = 'D:\Dropbox\BIDS\olf_blind\source\Results';
 
 
 %% Parameters definitions
 % select what to convert and transfer
-do_anat = 1;
+do_anat = 0;
 do_func = 1;
-do_dwi = 1;
+do_dwi = 0;
 
 
 opt.zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for
 % SPM users)
 opt.delete_json = 1; % in case you have already created the json files in
 % another way (or you have already put some in the root folder)
-opt.do = 1; % actually convert DICOMS, can be usefull to set to false
+opt.do = 0; % actually convert DICOMS, can be usefull to set to false
 % if only events files or something similar must be created
 
 
 % DICOM folder patterns to look for
-subject_dir_pattern = 'Olf_Blind*';
+subject_dir_pattern = 'Olf_Blind_C02*';
 
 
 % Details for ANAT
@@ -156,7 +161,7 @@ addpath(genpath(fullfile(pwd, 'subfun')))
 addpath(fullfile(pwd,'dicm2nii'))
 
 addpath(spm_path)
-spm('defaults','fmri')
+
 % check spm version
 [a, b] = spm('ver');
 if any(~[strcmp(a, 'SPM12') strcmp(b, '7487')])
@@ -166,6 +171,7 @@ if any(~[strcmp(a, 'SPM12') strcmp(b, '7487')])
     warning(str); %#ok<*SPWRN>
 end
 clear a b
+spm('defaults','fmri')
 
 mkdir(tgt_dir)
 
@@ -190,7 +196,8 @@ create_dataset_description_json(tgt_dir, opt)
 subj_ls = dir(fullfile(src_dir, subject_dir_pattern));
 nb_sub = numel(subj_ls);
 
-for iSub = 19:nb_sub % for each subject
+
+for iSub = 1:nb_sub % for each subject
     
     opt.iSub = iSub;
     
