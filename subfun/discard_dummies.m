@@ -20,7 +20,7 @@ end
 % then we select the ones we want to discard and move them into
 % the dummy folder
 dummies = spm_select('FPList', func_src_dir, ...
-    ['^.*' subj_ls(iSub).name '-000[0-' num2str(nb_dummies) '].dcm$']);
+    '^.*.dcm$');
 if ~isempty(dummies)
     for i_dummy = 1:size(dummies,1)
         movefile(dummies(i_dummy,:), dummy_dir)
