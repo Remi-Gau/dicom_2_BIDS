@@ -57,35 +57,38 @@ clc
 % fullpath of the spm 12 folder
 % spm_path = '/home/remi-gau/Documents/SPM/spm12';
 
-spm_path = 'D:\Dropbox\Code\MATLAB\Neuroimaging\SPM\spm12';
+spm_path = '/Users/cerenbattal/Documents/MATLAB/SPM/spm12';
 
 % fullpaths
 % src_dir = '/home/remi-gau/BIDS/Olf_Blind/source/DICOM'; % source folder
 % tgt_dir = '/home/remi-gau/BIDS/Olf_Blind/raw'; % target folder
 % opt.onset_files_dir = '/home/remi-gau/BIDS/Olf_Blind/source/Results';
+group = 'EB';
 
-src_dir = 'D:\Dropbox\BIDS\olf_blind\source\DICOM'; % source folder
-tgt_dir = 'D:\Dropbox\BIDS\olf_blind\source\raw'; % target folder
-opt.onset_files_dir = 'D:\Dropbox\BIDS\olf_blind\source\Results';
+src_dir = ['/Users/cerenbattal/Cerens_files/fMRI/RAW/SpatioDir/',group]; % source folder
+tgt_dir = ['/Users/cerenbattal/Cerens_files/fMRI/RAW/BIDS/SpatioDir/',group]; % target folder
+opt.onset_files_dir = '/Users/cerenbattal/Cerens_files/fMRI/RAW/BIDS/SpatioDir/onsets';
 
 
 %% Parameters definitions
 % select what to convert and transfer
-do_anat = 0;
+do_anat = 0; % do anatomicals 1
 do_func = 1;
-do_dwi = 0;
+do_dwi = 0; % do dwi 1
 
 
 opt.zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for
 % SPM users)
-opt.delete_json = 1; % in case you have already created the json files in
+opt.delete_json = 0; % in case you have already created the json files in
 % another way (or you have already put some in the root folder)
-opt.do = 0; % actually convert DICOMS, can be usefull to set to false
+opt.do = 1; % actually convert DICOMS, can be usefull to set to false
 % if only events files or something similar must be created
 
 
 % DICOM folder patterns to look for
-subject_dir_pattern = 'Olf_Blind_C02*';
+listfolders = dir(src_dir);
+listfolders = listfolders(4:end); %(isfolder(listfolders))
+%subject_dir_pattern = listfolders; %Olf_Blind_C02*
 
 
 % Details for ANAT
@@ -102,25 +105,15 @@ opt.tgt_anat_dir_patterns = {
 
 % Details for FUNC
 opt.src_func_dir_patterns = {
-    'bold_run-[1-2]';...
-    'bold_run-[3-4]';...
-    'bold_RS'};
+    'lnif_epi1_333_TR2.5s_DiCo'};
 opt.task_name = {...
-    'olfid'; ...
-    'olfloc'; ...
-    'rest'};
+    'spatiodir'};
 opt.get_onset = [
-    1;... 
-    1;...
     0];
 opt.get_stim = [
-    1;...
-    1;...
     0];
-opt.nb_folder = [;...
-    2;...
-    2;...
-    1];
+opt.nb_folder = [...
+    12];
 opt.stim_patterns = {...
     '^Breathing.*[Ii]den[_]?[0]?[1-2].*.txt$'; ...
     '^Breathing.*[Ll]oc[_]?[0]?[1-2].*.txt$' ;...
@@ -130,11 +123,9 @@ opt.events_patterns = {...
     '^Results.*.txt$';...
     ''};
 opt.events_src_file = {
-    1:2;...
-    3:4;...
-    []};
+    1:12};
 
-opt.nb_dummies = 8; %9 MAX!!!!
+opt.nb_dummies = 3; %9 MAX!!!!
 
 
 % Details for DWI
@@ -193,7 +184,8 @@ end
 create_dataset_description_json(tgt_dir, opt)
 
 % get list of subjsects
-subj_ls = dir(fullfile(src_dir, subject_dir_pattern));
+% subj_ls = dir(fullfile(src_dir, subject_dir_pattern));
+subj_ls = listfolders;
 nb_sub = numel(subj_ls);
 
 
@@ -202,12 +194,12 @@ for iSub = 1:nb_sub % for each subject
     opt.iSub = iSub;
     
     % creating name of the subject ID (folder and filename)
-    if strcmp(subj_ls(iSub).name(11), 'B')
+    if strcmp(group, 'EB')
         sub_id = 'sub-blnd';
-    elseif strcmp(subj_ls(iSub).name(11), 'C')
+    elseif strcmp(group, 'SC')
         sub_id = 'sub-ctrl';
     end
-    sub_id = [sub_id subj_ls(iSub).name(12:end)]; %#ok<*AGROW>
+    sub_id = [sub_id num2str(iSub)]; %#ok<*AGROW>
     
     % keep track of the subjects ID to create participants.tsv
     ls_sub_id{iSub} = sub_id; %#ok<*SAGROW>
