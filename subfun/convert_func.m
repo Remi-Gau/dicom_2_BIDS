@@ -15,9 +15,10 @@ func_tgt_dir = fullfile(sub_tgt_dir, 'func');
 % Remove any nifti / json / tsv files present related to this task
 if opt.do
     
-    bold_dirs = spm_select('FPList', sub_src_dir, 'dir', [pattern.input '$']);
+    bold_dirs = spm_select('FPList', sub_src_dir, 'dir', ['^.*' pattern.input '$']);
     if size(bold_dirs,1)~=nb_folder
         disp(bold_dirs)
+        fprintf('\n')
         warning('More than the required number of source func folders for that task')
         create_log_file(sub_id, sub_src_dir, ['_task-' pattern.output], bold_dirs)
     end
@@ -34,6 +35,7 @@ if get_onset
         events_pattern);
     if size(onset_files,1)~=sum(cellfun(@numel, opt.events_src_file))
         disp(onset_files)
+        fprint('\n')
         warning('More than the required number of source onset files')
         create_log_file(sub_id, sub_src_dir, ['_task-' pattern.output], onset_files)
     end
@@ -48,6 +50,7 @@ if get_stim
         stim_pattern);
     if size(stim_files,1)~=nb_folder
         disp(stim_files)
+        fprint('\n')
         warning('More than the required number of source stim files for that task')
         create_log_file(sub_id, sub_src_dir, ['_task-' pattern.output], stim_files)
     end
@@ -57,7 +60,7 @@ end
 for iBold = 1:nb_folder
 
     func_tgt_name = fullfile(func_tgt_dir, ...
-        [sub_id '_task-' pattern.output '_run-' num2str(iBold) '_bold']);
+        [sub_id '_task-' pattern.output '_run-' sprintf('%02.0f', iBold) '_bold']);
     
     if opt.do
         
