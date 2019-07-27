@@ -50,3 +50,95 @@ There will still some cleaning up to do in the json files: for example most like
 json files created will be modified to remove any field with 'Patient' in it and the phase encoding direction will be re-encoded in a BIDS compliant way (`i`, `j`, `k`, `i-`, `j-`, `k-`).
 
 The `participants.tsv` file is created based on the header info of the anatomical (sex and age) so it might not be accurate.
+
+
+
+###
+
+
+src_dir = 'D:\Dropbox\BIDS\olf_blind\source\DICOM'; % source folder
+tgt_dir = 'D:\Dropbox\BIDS\olf_blind\source\raw'; % target folder
+opt.onset_files_dir = 'D:\Dropbox\BIDS\olf_blind\source\Results';
+
+
+%% Parameters definitions
+% select what to convert and transfer
+do_anat = 0;
+do_func = 1;
+do_dwi = 0;
+
+
+opt.zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for
+% SPM users)
+opt.delete_json = 1; % in case you have already created the json files in
+% another way (or you have already put some in the root folder)
+opt.do = 0; % actually convert DICOMS, can be usefull to set to false
+% if only events files or something similar must be created
+
+
+% DICOM folder patterns to look for
+subject_dir_pattern = 'Olf_Blind_C02*';
+
+
+% Details for ANAT
+% target folders to convert
+opt.src_anat_dir_patterns = {
+    'acq-mprage_T1w', ...
+    'acq-tse_t2-tse-cor-'};
+
+% corresponding names for the output file in BIDS data set
+opt.tgt_anat_dir_patterns = {
+    '_T1w', ...
+    '_acq-tse_T2w'};
+
+
+% Details for FUNC
+opt.src_func_dir_patterns = {
+    'bold_run-[1-2]';...
+    'bold_run-[3-4]';...
+    'bold_RS'};
+opt.task_name = {...
+    'olfid'; ...
+    'olfloc'; ...
+    'rest'};
+opt.get_onset = [
+    1;...
+    1;...
+    0];
+opt.get_stim = [
+    1;...
+    1;...
+    0];
+opt.nb_folder = [;...
+    2;...
+    2;...
+    1];
+opt.stim_patterns = {...
+    '^Breathing.*[Ii]den[_]?[0]?[1-2].*.txt$'; ...
+    '^Breathing.*[Ll]oc[_]?[0]?[1-2].*.txt$' ;...
+    ''};
+opt.events_patterns = {...
+    '^Results.*.txt$';...
+    '^Results.*.txt$';...
+    ''};
+opt.events_src_file = {
+    1:2;...
+    3:4;...
+    []};
+
+opt.nb_dummies = 8; %9 MAX!!!!
+
+
+% Details for DWI
+% target folders to convert
+opt.src_dwi_dir_patterns = {...
+    'pa_dwi', ...
+    'ap_b0'};
+% corresponding names for the output file in BIDS data set
+opt.tgt_dwi_dir_patterns = {
+    '_dwi', ...
+    '_sbref'};
+% take care of eventual bval bvec values
+opt.bvecval = [...
+    1; ...
+    0];
