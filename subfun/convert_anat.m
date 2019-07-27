@@ -18,12 +18,7 @@ anat_tgt_name = fullfile(anat_tgt_dir, [sub_id pattern.output]);
 
 % in case we decided to not run the conversion
 if opt.do
-    
-    % remove any nifti files and json present in the target folder to start
-    % from a blank slate
-    delete(fullfile(anat_tgt_dir, '*.nii*'))
-    delete(fullfile(anat_tgt_dir, '*.json'))
-    
+
     % do the conversion and rename the output files and fix json content
     opt = conversion_do(anat_src_dir, anat_tgt_dir, anat_tgt_name, pattern, opt);
 

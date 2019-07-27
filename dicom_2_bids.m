@@ -71,21 +71,21 @@ opt.onset_files_dir = 'D:\Dropbox\BIDS\olf_blind\source\Results';
 
 %% Parameters definitions
 % select what to convert and transfer
-do_anat = 0;
-do_func = 1;
-do_dwi = 0;
+do_anat = 1;
+do_func = 0;
+do_dwi = 1;
 
 
 opt.zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for
 % SPM users)
 opt.delete_json = 1; % in case you have already created the json files in
 % another way (or you have already put some in the root folder)
-opt.do = 0; % actually convert DICOMS, can be usefull to set to false
+opt.do = 1; % actually convert DICOMS, can be usefull to set to false
 % if only events files or something similar must be created
 
 
 % DICOM folder patterns to look for
-subject_dir_pattern = 'Olf_Blind_C02*';
+subject_dir_pattern = 'Olf_Blind*';
 
 
 % Details for ANAT
@@ -225,6 +225,13 @@ for iSub = 1:nb_sub % for each subject
         
         fprintf('\n\ndoing ANAT\n')
         
+        if opt.do
+            % remove any nifti files and json present in the target folder to start
+            % from a blank slate
+            delete(fullfile(sub_tgt_dir, 'anat', '*.nii*'))
+            delete(fullfile(sub_tgt_dir, 'anat', '*.json'))
+        end
+        
         %% do T1w
         % we set the patterns in DICOM folder names too look for in the
         % source folder
@@ -280,7 +287,17 @@ for iSub = 1:nb_sub % for each subject
     %% deal with diffusion imaging
     if do_dwi
 
-         fprintf('\n\ndoing DWI\n')
+        fprintf('\n\ndoing DWI\n')
+        
+        if opt.do
+            % remove any nifti files and json present in the target folder to start
+            % from a blank slate
+            delete(fullfile(sub_tgt_dir, 'dwi', '*.nii*'))
+            delete(fullfile(sub_tgt_dir, 'dwi', '*.json'))
+            if any(opt.bvecval)
+                delete(fullfile(sub_tgt_dir, 'dwi', '*.bv*'))
+            end
+        end
         
         %% do DWI
         % we set the patterns in DICOM folder names too look for in the

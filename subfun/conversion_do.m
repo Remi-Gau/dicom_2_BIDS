@@ -4,7 +4,7 @@ opts.indent = opt.indent;
 
 fprintf('\n converting DICOM folder: %s\n  into file: %s\n\n', src_dir, tgt_name)
 % convert files (0 is for 4D unzipped files)
-dicm2nii(src_dir, tgt_dir, opt.zip_output);
+dicm2nii(deblank(src_dir), tgt_dir, opt.zip_output);
 % give some time to zip the files before we rename them
 pause(opt.pauseTime)
 
@@ -17,6 +17,5 @@ opt = get_participant_info(opt, tgt_name);
 
 % fix json content
 fix_json_content([tgt_name '.json'], opts);
-
 
 end

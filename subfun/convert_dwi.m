@@ -13,15 +13,7 @@ dwi_tgt_dir = fullfile(sub_tgt_dir, 'dwi');
 
 % in case we decided to not run the conversion
 if opt.do
-    
-    % remove any Nifti files and json present
-    delete(fullfile(dwi_tgt_dir, '*.nii*'))
-    delete(fullfile(dwi_tgt_dir, '*.json'))
-    
-    if bvecval
-        delete(fullfile(dwi_tgt_dir, '*.bv*'))
-    end
-    
+
     % define target file names for dwi
     dwi_tgt_name = fullfile(dwi_tgt_dir, [sub_id  pattern.output]);
     
