@@ -18,6 +18,9 @@ opt = get_participant_info(opt, tgt_name);
 % fix json content
 fix_json_content([tgt_name '.json'], opts);
 
+% copy json content to base directory
+cp_json_2_root([tgt_name '.json'], opt)
+
 if opt.delete_json
     delete([tgt_name '.json'])
 end

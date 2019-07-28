@@ -17,9 +17,9 @@ Need to know more about BIDS
 
 ## TO DO
 -   extract participant weight from header and put in tsv file?
--   refactor the different sections anat, func, dwi
 -   subject renaming should be more flexible
 -   allow for removal of more than 9 dummy scans
+-   simpify deleting files
 
 ## CONTENT
 

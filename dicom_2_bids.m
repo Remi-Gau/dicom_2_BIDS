@@ -71,7 +71,7 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
     nb_sub = numel(subj_ls);
     
     
-    for iSub = 1:nb_sub % for each subject
+    for iSub = 1:2 %nb_sub % for each subject
         
         opt.iSub = iSub;
         
@@ -105,25 +105,23 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
             % from a blank slate
             delete(fullfile(sub_tgt_dir, 'anat', '*.nii*'))
             delete(fullfile(sub_tgt_dir, 'anat', '*.json'))
-
-            
-            %% do T1w
-            % we set the patterns in DICOM folder names too look for in the
-            % source folder
-            pattern.input = opt.src_anat_dir_patterns{1};
-            % we set the pattern to in the target file in the BIDS data set
-            pattern.output = opt.tgt_anat_dir_patterns{1};
-            % we ask to return opt because that is where the age and gender of
-            % the participants is stored
-            [opt, anat_tgt_dir] = convert_anat(sub_id, sub_src_dir, sub_tgt_dir, pattern, opt);
             
             
-            %% do T2 olfactory bulb high-res image
-            pattern.input = opt.src_anat_dir_patterns{2};
-            pattern.output = opt.tgt_anat_dir_patterns{2};
-            convert_anat(sub_id, sub_src_dir, sub_tgt_dir, pattern, opt);
+            %% do for all ANAT
+            for iIMG = 1:numel(opt.src_anat_dir_patterns)
+                
+                % we set the patterns in DICOM folder names too look for in the
+                % source folder
+                pattern.input = opt.src_anat_dir_patterns{iIMG};
+                % we set the pattern to in the target file in the BIDS data set
+                pattern.output = opt.tgt_anat_dir_patterns{iIMG};
+                % we ask to return opt because that is where the age and gender of
+                % the participants is stored
+                [opt, anat_tgt_dir] = convert_anat(sub_id, sub_src_dir, sub_tgt_dir, pattern, opt);
+                
+            end
             
-            % clean up
+            %% clean up
             delete(fullfile(anat_tgt_dir, '*.mat'))
             
         end
@@ -168,26 +166,20 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
             delete(fullfile(sub_tgt_dir, 'dwi', '*.json'))
             delete(fullfile(sub_tgt_dir, 'dwi', '*.bv*'))
             
-            %% do DWI
-            % we set the patterns in DICOM folder names too look for in the
-            % source folder
-            pattern.input = opt.src_dwi_dir_patterns{1};
-            % we set the pattern to in the target file in the BIDS data set
-            pattern.output = opt.tgt_dwi_dir_patterns{1};
-            
-            bvecval = opt.bvecval(1);
-            
-            [dwi_tgt_dir] = convert_dwi(sub_id, sub_src_dir, sub_tgt_dir, bvecval, pattern, opt);
+            %% do for all DWI
+            for iIMG = 1:numel(opt.src_dwi_dir_patterns)
                 
-            %% do b_ref
-            pattern.input = opt.src_dwi_dir_patterns{2};
-            % we set the pattern to in the target file in the BIDS data set
-            pattern.output = opt.tgt_dwi_dir_patterns{2};
-            
-            bvecval = opt.bvecval(2);
-            
-            convert_dwi(sub_id, sub_src_dir, sub_tgt_dir, bvecval, pattern, opt);
-            
+                % we set the patterns in DICOM folder names too look for in the
+                % source folder
+                pattern.input = opt.src_dwi_dir_patterns{iIMG};
+                % we set the pattern to in the target file in the BIDS data set
+                pattern.output = opt.tgt_dwi_dir_patterns{iIMG};
+                
+                bvecval = opt.bvecval(iIMG);
+                
+                [dwi_tgt_dir] = convert_dwi(sub_id, sub_src_dir, sub_tgt_dir, bvecval, pattern, opt);
+                
+            end
             
             %% clean up
             delete(fullfile(dwi_tgt_dir, '*.mat'))
