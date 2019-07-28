@@ -9,13 +9,17 @@ dicm2nii(deblank(src_dir), tgt_dir, opt.zip_output);
 pause(opt.pauseTime)
 
 % rename json and .nii output files
-rename_tgt_file(tgt_dir, pattern.input, tgt_name, 'nii');
 rename_tgt_file(tgt_dir, pattern.input, tgt_name, 'json');
+rename_tgt_file(tgt_dir, pattern.input, tgt_name, 'nii');
 
 % try to get age and gender from json file
 opt = get_participant_info(opt, tgt_name);
 
 % fix json content
 fix_json_content([tgt_name '.json'], opts);
+
+if opt.delete_json
+    delete([tgt_name '.json'])
+end
 
 end
