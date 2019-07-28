@@ -43,9 +43,7 @@
 % - documentation !!!!!
 % - extract participant weight from header and put in tsv file?
 % - make sure that all parts that should be tweaked (or hard coded are in separate functions)
-% - subject renaming should be more flexible
 % - allow for removal of more than 9 dummy scans
-% - move json file of each modality into the source folder
 % - deal with sessions
 
 clear
@@ -71,7 +69,7 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
     nb_sub = numel(subj_ls);
     
     
-    for iSub = 1:2 %nb_sub % for each subject
+    for iSub = 1 %nb_sub % for each subject
         
         opt.iSub = iSub;
         
@@ -96,6 +94,8 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
         
         %% Anatomy folders
         if opt.do_anat
+            
+            opt.type = 'anat';
             
             spm_mkdir(sub_tgt_dir, 'anat');
             
@@ -130,21 +130,14 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
         %% BOLD series
         if opt.do_func
             
+            opt.type = 'func';
+            
             spm_mkdir(sub_tgt_dir, 'func');
             
             fprintf('\n\ndoing FUNC\n')
-            
-            if opt.nb_dummies > 0
-                opts.indent = opt.indent;
-                filename = fullfile(opt.tgt_dir, 'discarded_dummy.json');
-                content.NumberOfVolumesDiscardedByUser = opt.nb_dummies;
-                spm_jsonwrite(filename, content, opts)
-            end
-            
+
             for task_idx = 1:numel(opt.task_name)
                 fprintf('\n\n doing TASK: %s\n', opt.task_name{task_idx})
-                create_events_json(opt.tgt_dir, opt, task_idx)
-                create_stim_json(opt.tgt_dir, opt, task_idx)
                 [func_tgt_dir] = convert_func(sub_id, subj_ls{iSub}, sub_src_dir, sub_tgt_dir, opt, task_idx);
             end
             
@@ -155,6 +148,8 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
         
         %% deal with diffusion imaging
         if opt.do_dwi
+            
+            opt.type = 'dwi';
             
             spm_mkdir(sub_tgt_dir, 'dwi');
             

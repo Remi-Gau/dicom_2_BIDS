@@ -1,7 +1,5 @@
 function opt = conversion_do(src_dir, tgt_dir, tgt_name, pattern, opt)
 
-opts.indent = opt.indent;
-
 fprintf('\n converting DICOM folder: %s\n  into file: %s\n\n', src_dir, tgt_name)
 % convert files (0 is for 4D unzipped files)
 dicm2nii(deblank(src_dir), tgt_dir, opt.zip_output);
@@ -16,7 +14,7 @@ rename_tgt_file(tgt_dir, pattern.input, tgt_name, 'nii');
 opt = get_participant_info(opt, tgt_name);
 
 % fix json content
-fix_json_content([tgt_name '.json'], opts);
+fix_json_content([tgt_name '.json'], pattern, opt);
 
 % copy json content to base directory
 cp_json_2_root([tgt_name '.json'], opt)

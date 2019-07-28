@@ -1,8 +1,8 @@
-function fix_json_content(json_file_name, opt)
-
-fprintf(' cleaning %s\n', json_file_name)
+function fix_json_content(json_file_name, pattern, opt)
 
 opts.indent = opt.indent;
+
+fprintf(' cleaning %s\n', json_file_name)
 
 content = spm_jsonread(json_file_name);
 
@@ -32,6 +32,19 @@ if isfield(content, 'PhaseEncodingDirection')
         case 'z-'
             content.PhaseEncodingDirection = 'k-';
     end
+end
+
+if  strcmp(opt.type, 'func')
+    
+    if opt.nb_dummies > 0
+        content.NumberOfVolumesDiscardedByUser = opt.nb_dummies;
+    end
+    
+    TaskName = pattern.output;
+    TaskName = strrep(TaskName, '-', '');
+    TaskName = strrep(TaskName, '.', '');
+    content.TaskName = TaskName;
+    
 end
 
 spm_jsonwrite(json_file_name, content, opts)

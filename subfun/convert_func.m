@@ -70,13 +70,15 @@ for iBold = 1:nb_folder
         discard_dummies(func_src_dir, opt.nb_dummies);
         
         conversion_do(func_src_dir, func_tgt_dir, func_tgt_name, pattern, opt);
+
     end
-    
+
     %% events file
     if get_onset
         input_file = deblank(onset_files(iBold,:));
         output_file = [func_tgt_name(1:end-4) 'events.tsv'];
         create_events_file(input_file, output_file)
+        create_events_json(opt.tgt_dir, opt, task_idx)
     end
     
     %% stim file
@@ -84,6 +86,7 @@ for iBold = 1:nb_folder
         input_file = deblank(stim_files(iBold,:));
         output_file = [func_tgt_name(1:end-4) 'stim.tsv'];
         create_stim_file(input_file, output_file)
+        create_stim_json(opt.tgt_dir, opt, task_idx)
     end
 end
 
