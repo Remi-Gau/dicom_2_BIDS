@@ -63,9 +63,10 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
     
     % get list of subjsects
     if isempty(opt.subject_dir_pattern{iGroup})
-        subj_ls = opt.subj_ls;
+        subj_ls = opt.subj_ls{1};
     else
         subj_ls = dir(fullfile(opt.src_dir, opt.subject_dir_pattern{iGroup}));
+        subj_ls = {subj_ls.name};
     end
     nb_sub = numel(subj_ls);
     
@@ -80,7 +81,7 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
         else
             sub_id = ['sub-' opt.subject_tgt_pattern{iGroup}];
         end
-        sub_id = [sub_id sprintf('%03.0f', iSub)]; %#ok<*AGROW>
+        sub_id = [sub_id sprintf('%02.0f', iSub)]; %#ok<*AGROW>
         
         % keep track of the subjects ID to create participants.tsv
         ls_sub_id{iSub} = sub_id; %#ok<*SAGROW>
@@ -100,12 +101,11 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
             
             fprintf('\n\ndoing ANAT\n')
             
-            if opt.do
-                % remove any nifti files and json present in the target folder to start
-                % from a blank slate
-                delete(fullfile(sub_tgt_dir, 'anat', '*.nii*'))
-                delete(fullfile(sub_tgt_dir, 'anat', '*.json'))
-            end
+            % remove any nifti files and json present in the target folder to start
+            % from a blank slate
+            delete(fullfile(sub_tgt_dir, 'anat', '*.nii*'))
+            delete(fullfile(sub_tgt_dir, 'anat', '*.json'))
+
             
             %% do T1w
             % we set the patterns in DICOM folder names too look for in the
@@ -125,9 +125,6 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
             
             % clean up
             delete(fullfile(anat_tgt_dir, '*.mat'))
-            if opt.delete_json
-                delete(fullfile(anat_tgt_dir, '*.json'))
-            end
             
         end
         
@@ -150,14 +147,11 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
                 fprintf('\n\n doing TASK: %s\n', opt.task_name{task_idx})
                 create_events_json(opt.tgt_dir, opt, task_idx)
                 create_stim_json(opt.tgt_dir, opt, task_idx)
-                [func_tgt_dir] = convert_func(sub_id, subj_ls, sub_src_dir, sub_tgt_dir, opt, task_idx);
+                [func_tgt_dir] = convert_func(sub_id, subj_ls{iSub}, sub_src_dir, sub_tgt_dir, opt, task_idx);
             end
             
             % clean up
             delete(fullfile(func_tgt_dir, '*.mat'))
-            if opt.delete_json
-                delete(fullfile(func_tgt_dir, '*.json'))
-            end
             
         end
         
@@ -168,15 +162,11 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
             
             fprintf('\n\ndoing DWI\n')
             
-            if opt.do
-                % remove any nifti files and json present in the target folder to start
-                % from a blank slate
-                delete(fullfile(sub_tgt_dir, 'dwi', '*.nii*'))
-                delete(fullfile(sub_tgt_dir, 'dwi', '*.json'))
-                if any(opt.bvecval)
-                    delete(fullfile(sub_tgt_dir, 'dwi', '*.bv*'))
-                end
-            end
+            % remove any nifti files and json present in the target folder to start
+            % from a blank slate
+            delete(fullfile(sub_tgt_dir, 'dwi', '*.nii*'))
+            delete(fullfile(sub_tgt_dir, 'dwi', '*.json'))
+            delete(fullfile(sub_tgt_dir, 'dwi', '*.bv*'))
             
             %% do DWI
             % we set the patterns in DICOM folder names too look for in the
@@ -188,11 +178,7 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
             bvecval = opt.bvecval(1);
             
             [dwi_tgt_dir] = convert_dwi(sub_id, sub_src_dir, sub_tgt_dir, bvecval, pattern, opt);
-            
-            if opt.delete_json
-                delete(fullfile(dwi_tgt_dir, '*.json'))
-            end
-            
+                
             %% do b_ref
             pattern.input = opt.src_dwi_dir_patterns{2};
             % we set the pattern to in the target file in the BIDS data set
@@ -214,8 +200,9 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
     
 end
 
+
 %% print participants.tsv file
-if do_anat && opt.do
+if opt.do_anat && opt.do
     create_participants_tsv(opt.tgt_dir, ls_sub_id, opt.age, opt.gender);
 end
 
