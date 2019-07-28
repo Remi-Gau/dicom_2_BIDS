@@ -173,10 +173,8 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
                 pattern.input = opt.src_dwi_dir_patterns{iIMG};
                 % we set the pattern to in the target file in the BIDS data set
                 pattern.output = opt.tgt_dwi_dir_patterns{iIMG};
-                
-                bvecval = opt.bvecval(iIMG);
-                
-                [dwi_tgt_dir] = convert_dwi(sub_id, sub_src_dir, sub_tgt_dir, bvecval, pattern, opt);
+
+                [dwi_tgt_dir] = convert_dwi(sub_id, sub_src_dir, sub_tgt_dir, pattern, opt);
                 
             end
             

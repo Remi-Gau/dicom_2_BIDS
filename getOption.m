@@ -17,8 +17,8 @@ opt.onset_files_dir = 'D:\Dropbox\BIDS\olf_blind\source\Results';
 %% Parameters definitions
 % select what to convert and transfer
 opt.do_anat = 0;
-opt.do_func = 1;
-opt.do_dwi = 0;
+opt.do_func = 0;
+opt.do_dwi = 1;
 
 
 opt.zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for
@@ -99,10 +99,6 @@ opt.src_dwi_dir_patterns = {...
 opt.tgt_dwi_dir_patterns = {
     '_dwi', ...
     '_sbref'};
-% take care of eventual bval bvec values
-opt.bvecval = [...
-    1; ...
-    0];
 
 
 %% data description content 

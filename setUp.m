@@ -8,7 +8,7 @@ opt = getOption();
 if opt.zip_output
     opt.pauseTime = 30; %#ok<*UNRCH>
 else
-    opt.pauseTime = 1;
+    opt.pauseTime = 2;
 end
 
 
