@@ -31,11 +31,11 @@ if get_onset
     delete(fullfile(func_tgt_dir, ['*' pattern.output '*events.tsv*']))
     % list onset files for that subject
     onset_files = spm_select('FPList', ...
-        fullfile(opt.onset_files_dir, subj_ls(opt.iSub).name(11:end)), ...
+        fullfile(opt.onset_files_dir, subj_ls(end-2:end)), ...
         events_pattern);
     if size(onset_files,1)~=sum(cellfun(@numel, opt.events_src_file))
         disp(onset_files)
-        fprint('\n')
+        fprintf('\n')
         warning('More than the required number of source onset files')
         create_log_file(sub_id, sub_src_dir, ['_task-' pattern.output], onset_files)
     end
@@ -46,11 +46,11 @@ if get_stim
     delete(fullfile(func_tgt_dir, ['*' pattern.output '*stim.tsv.gz*']))
     % list onset files for that subject
     stim_files = spm_select('FPList', ...
-        fullfile(opt.onset_files_dir, subj_ls(opt.iSub).name(11:end)), ...
+        fullfile(opt.onset_files_dir, subj_ls(end-2:end)), ...
         stim_pattern);
     if size(stim_files,1)~=nb_folder
         disp(stim_files)
-        fprint('\n')
+        fprintf('\n')
         warning('More than the required number of source stim files for that task')
         create_log_file(sub_id, sub_src_dir, ['_task-' pattern.output], stim_files)
     end
@@ -67,7 +67,7 @@ for iBold = 1:nb_folder
         func_src_dir = bold_dirs(iBold,:);
 
         % set dummies aside
-        discard_dummies(func_src_dir, opt.nb_dummies, subj_ls, opt.iSub);
+        discard_dummies(func_src_dir, opt.nb_dummies);
         
         conversion_do(func_src_dir, func_tgt_dir, func_tgt_name, pattern, opt);
     end
