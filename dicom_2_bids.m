@@ -139,6 +139,10 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
             for task_idx = 1:numel(opt.task_name)
                 fprintf('\n\n doing TASK: %s\n', opt.task_name{task_idx})
                 [func_tgt_dir] = convert_func(sub_id, subj_ls{iSub}, sub_src_dir, sub_tgt_dir, opt, task_idx);
+                fprintf('\n')
+                convert_event(sub_id, subj_ls{iSub}, sub_src_dir, sub_tgt_dir, opt, task_idx);
+                fprintf('\n')
+                convert_stim(sub_id, subj_ls{iSub}, sub_src_dir, sub_tgt_dir, opt, task_idx);
             end
             
             % clean up
