@@ -14,7 +14,8 @@ end
 
 %% set path and directories
 addpath(genpath(fullfile(pwd, 'subfun')))
-addpath(fullfile(pwd,'dicm2nii'))
+addpath(genpath(fullfile(pwd, 'diy')))
+addpath(fullfile(pwd, 'dicm2nii'))
 
 mkdir(opt.tgt_dir)
 
