@@ -17,8 +17,6 @@ Need to know more about BIDS
 
 ## TO DO
 -   extract participant weight from header and put in tsv file?
--   refactor the different sections anat, func, dwi
--   subject renaming should be more flexible
 -   allow for removal of more than 9 dummy scans
 
 ## CONTENT
@@ -31,22 +29,108 @@ Uses SPM12 to deface all the T1w of a BIDS.
 
 The script imports DICOMs and format them into a BIDS structure while saving json and creating a `participants.tsv` file also creates a `dataset_decription.json` with empty fields
 
-Lots of the parameters can be changed in the parameters section at the beginning of the script.
+Lots of the parameters can be changed in the parameters section in getOption file.
 
 In general make sure you have removed from your subjects source folder any folder that you do not want to convert (interrupted sequences for example).
 
-At the moment this script is not super flexible and assumes only one session and can only deal with anatomical T1, functional (bold and rest) and DWI.
-
-It also makes some assumption on the number of DWI, ANAT, resting state runs (only takes 1).
-
-The way the subject naming happens is hardcoded (line 90-100).
+At the moment this script is not super flexible and assumes only one session and can only deal with anatomical anat, functional and DWI.
 
 The script can remove up to 9 dummy scans (they are directly moved from the DICOM source folder and put in a 'dummy' folder) so that dicm2nii does not "see" them.
 
 The way `event.tsv` files are generated is very unflexible (line 210-230) also the stimulus onset is not yet recalculated depending on the number of dummies removed.
 
-There will still some cleaning up to do in the json files: for example most likely you will only want to have json files in the root folder and that apply to all inferior levels rather than one json file per nifti file.
-
 json files created will be modified to remove any field with 'Patient' in it and the phase encoding direction will be re-encoded in a BIDS compliant way (`i`, `j`, `k`, `i-`, `j-`, `k-`).
 
 The `participants.tsv` file is created based on the header info of the anatomical (sex and age) so it might not be accurate.
+
+
+
+###
+
+
+src_dir = 'D:\Dropbox\BIDS\olf_blind\source\DICOM'; % source folder
+tgt_dir = 'D:\Dropbox\BIDS\olf_blind\source\raw'; % target folder
+opt.onset_files_dir = 'D:\Dropbox\BIDS\olf_blind\source\Results';
+
+
+%% Parameters definitions
+% select what to convert and transfer
+do_anat = 0;
+do_func = 1;
+do_dwi = 0;
+
+
+opt.zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for
+% SPM users)
+opt.delete_json = 1; % in case you have already created the json files in
+% another way (or you have already put some in the root folder)
+opt.do = 0; % actually convert DICOMS, can be usefull to set to false
+% if only events files or something similar must be created
+
+
+% DICOM folder patterns to look for
+subject_dir_pattern = 'Olf_Blind_C02*';
+
+
+% Details for ANAT
+% target folders to convert
+opt.src_anat_dir_patterns = {
+    'acq-mprage_T1w', ...
+    'acq-tse_t2-tse-cor-'};
+
+% corresponding names for the output file in BIDS data set
+opt.tgt_anat_dir_patterns = {
+    '_T1w', ...
+    '_acq-tse_T2w'};
+
+
+% Details for FUNC
+opt.src_func_dir_patterns = {
+    'bold_run-[1-2]';...
+    'bold_run-[3-4]';...
+    'bold_RS'};
+opt.task_name = {...
+    'olfid'; ...
+    'olfloc'; ...
+    'rest'};
+opt.get_onset = [
+    1;...
+    1;...
+    0];
+opt.get_stim = [
+    1;...
+    1;...
+    0];
+opt.nb_folder = [;...
+    2;...
+    2;...
+    1];
+opt.stim_patterns = {...
+    '^Breathing.*[Ii]den[_]?[0]?[1-2].*.txt$'; ...
+    '^Breathing.*[Ll]oc[_]?[0]?[1-2].*.txt$' ;...
+    ''};
+opt.events_patterns = {...
+    '^Results.*.txt$';...
+    '^Results.*.txt$';...
+    ''};
+opt.events_src_file = {
+    1:2;...
+    3:4;...
+    []};
+
+opt.nb_dummies = 8; %9 MAX!!!!
+
+
+% Details for DWI
+% target folders to convert
+opt.src_dwi_dir_patterns = {...
+    'pa_dwi', ...
+    'ap_b0'};
+% corresponding names for the output file in BIDS data set
+opt.tgt_dwi_dir_patterns = {
+    '_dwi', ...
+    '_sbref'};
+% take care of eventual bval bvec values
+opt.bvecval = [...
+    1; ...
+    0];
