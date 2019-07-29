@@ -1,4 +1,4 @@
-function [func_tgt_dir] = convert_func(sub_id, subj_ls, sub_src_dir, sub_tgt_dir, opt, task_idx)
+function [func_tgt_dir] = convert_func(sub_id, sub_src_dir, sub_tgt_dir, opt, task_idx)
 
 
 nb_folder = opt.nb_folder(task_idx);
