@@ -40,6 +40,10 @@ for iBold = 1:nb_folder
         discard_dummies(func_src_dir, opt.nb_dummies);
         
         conversion_do(func_src_dir, func_tgt_dir, func_tgt_name, pattern, opt);
+        
+        % bring them back to leave the original structure seemingly
+        % untouched
+        bring_back_dummies(func_src_dir)
 
     end
 
