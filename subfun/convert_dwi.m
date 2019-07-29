@@ -24,7 +24,6 @@ if opt.do
     bvec_file = spm_select('FPList', dwi_tgt_dir, ...
     ['^.*' pattern.input '.*bvec$']);
     
-    
     if ~isempty(bvec_file)
         
         rename_tgt_file(dwi_tgt_dir, pattern.input, dwi_tgt_name, 'bvec');

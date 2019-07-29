@@ -13,9 +13,6 @@
 % any folder that you do not want to convert (interrupted sequences for example)
 
 % at the moment this script is not super flexible and assumes only one session
-% and can only deal with anatomical functional and DWI.
-
-% it also makes some assumption on the number of DWI, ANAT runs (only takes 1).
 
 % the way the subject naming happens is hardcoded
 
@@ -24,6 +21,7 @@
 % not "see" them
 
 % the way event.tsv files are generated is very unflexible
+
 % also the stimulus onset is not yet recalculated depending on the number
 % of dummies removed
 
@@ -40,11 +38,8 @@
 % anatomical (sex and age) so it might not be accurate
 
 % TO DO
-% - documentation !!!!!
 % - extract participant weight from header and put in tsv file?
-% - make sure that all parts that should be tweaked (or hard coded are in separate functions)
 % - allow for removal of more than 9 dummy scans
-% - deal with sessions
 
 clear
 clc
@@ -58,7 +53,7 @@ clc
 create_dataset_description_json(opt.tgt_dir, opt)
 
 for iGroup = 1:numel(opt.subject_dir_pattern)
-    
+
     % get list of subjsects
     if isempty(opt.subject_dir_pattern{iGroup})
         subj_ls = opt.subj_ls{1};
@@ -67,12 +62,12 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
         subj_ls = {subj_ls.name};
     end
     nb_sub = numel(subj_ls);
-    
-    
+
+
     for iSub = 1 %nb_sub % for each subject
-        
+
         opt.iSub = iSub;
-        
+
         % creating name of the subject ID (folder and filename)
         if isempty(opt.subject_tgt_pattern{iGroup})
             sub_id = 'sub-';
@@ -80,36 +75,36 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
             sub_id = ['sub-' opt.subject_tgt_pattern{iGroup}];
         end
         sub_id = [sub_id sprintf('%02.0f', iSub)]; %#ok<*AGROW>
-        
+
         % keep track of the subjects ID to create participants.tsv
         ls_sub_id{iSub} = sub_id; %#ok<*SAGROW>
-        
+
         fprintf('\n\n\nProcessing %s\n', sub_id)
-        
+
         % creating directories in BIDS structure
         sub_src_dir = fullfile(opt.src_dir, subj_ls{iSub});
         sub_tgt_dir = fullfile(opt.tgt_dir, sub_id);
-        
-        
-        
+
+
+
         %% Anatomy folders
         if opt.do_anat
-            
+
             opt.type = 'anat';
-            
+
             spm_mkdir(sub_tgt_dir, 'anat');
-            
+
             fprintf('\n\ndoing ANAT\n')
-            
+
             % remove any nifti files and json present in the target folder to start
             % from a blank slate
             delete(fullfile(sub_tgt_dir, 'anat', '*.nii*'))
             delete(fullfile(sub_tgt_dir, 'anat', '*.json'))
-            
-            
+
+
             %% do for all ANAT
             for iIMG = 1:numel(opt.src_anat_dir_patterns)
-                
+
                 % we set the patterns in DICOM folder names too look for in the
                 % source folder
                 pattern.input = opt.src_anat_dir_patterns{iIMG};
@@ -118,22 +113,22 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
                 % we ask to return opt because that is where the age and gender of
                 % the participants is stored
                 [opt, anat_tgt_dir] = convert_anat(sub_id, sub_src_dir, sub_tgt_dir, pattern, opt);
-                
+
             end
-            
+
             %% clean up
             delete(fullfile(anat_tgt_dir, '*.mat'))
-            
+
         end
-        
-        
+
+
         %% BOLD series
         if opt.do_func
-            
+
             opt.type = 'func';
-            
+
             spm_mkdir(sub_tgt_dir, 'func');
-            
+
             fprintf('\n\ndoing FUNC\n')
 
             for task_idx = 1:numel(opt.task_name)
@@ -144,30 +139,30 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
                 fprintf('\n')
                 convert_stim(sub_id, subj_ls{iSub}, sub_src_dir, sub_tgt_dir, opt, task_idx);
             end
-            
+
             % clean up
             delete(fullfile(func_tgt_dir, '*.mat'))
-            
+
         end
-        
+
         %% deal with diffusion imaging
         if opt.do_dwi
-            
+
             opt.type = 'dwi';
-            
+
             spm_mkdir(sub_tgt_dir, 'dwi');
-            
+
             fprintf('\n\ndoing DWI\n')
-            
+
             % remove any nifti files and json present in the target folder to start
             % from a blank slate
             delete(fullfile(sub_tgt_dir, 'dwi', '*.nii*'))
             delete(fullfile(sub_tgt_dir, 'dwi', '*.json'))
             delete(fullfile(sub_tgt_dir, 'dwi', '*.bv*'))
-            
+
             %% do for all DWI
             for iIMG = 1:numel(opt.src_dwi_dir_patterns)
-                
+
                 % we set the patterns in DICOM folder names too look for in the
                 % source folder
                 pattern.input = opt.src_dwi_dir_patterns{iIMG};
@@ -175,18 +170,18 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
                 pattern.output = opt.tgt_dwi_dir_patterns{iIMG};
 
                 [dwi_tgt_dir] = convert_dwi(sub_id, sub_src_dir, sub_tgt_dir, pattern, opt);
-                
+
             end
-            
+
             %% clean up
             delete(fullfile(dwi_tgt_dir, '*.mat'))
             delete(fullfile(dwi_tgt_dir, '*.txt'))
-            
-            
+
+
         end
-        
+
     end
-    
+
 end
 
 

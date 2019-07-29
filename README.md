@@ -17,9 +17,7 @@ Need to know more about BIDS
 
 ## TO DO
 -   extract participant weight from header and put in tsv file?
--   subject renaming should be more flexible
 -   allow for removal of more than 9 dummy scans
--   simpify deleting files
 
 ## CONTENT
 
@@ -31,21 +29,15 @@ Uses SPM12 to deface all the T1w of a BIDS.
 
 The script imports DICOMs and format them into a BIDS structure while saving json and creating a `participants.tsv` file also creates a `dataset_decription.json` with empty fields
 
-Lots of the parameters can be changed in the parameters section at the beginning of the script.
+Lots of the parameters can be changed in the parameters section in getOption file.
 
 In general make sure you have removed from your subjects source folder any folder that you do not want to convert (interrupted sequences for example).
 
-At the moment this script is not super flexible and assumes only one session and can only deal with anatomical T1, functional (bold and rest) and DWI.
-
-It also makes some assumption on the number of DWI, ANAT, resting state runs (only takes 1).
-
-The way the subject naming happens is hardcoded (line 90-100).
+At the moment this script is not super flexible and assumes only one session and can only deal with anatomical anat, functional and DWI.
 
 The script can remove up to 9 dummy scans (they are directly moved from the DICOM source folder and put in a 'dummy' folder) so that dicm2nii does not "see" them.
 
 The way `event.tsv` files are generated is very unflexible (line 210-230) also the stimulus onset is not yet recalculated depending on the number of dummies removed.
-
-There will still some cleaning up to do in the json files: for example most likely you will only want to have json files in the root folder and that apply to all inferior levels rather than one json file per nifti file.
 
 json files created will be modified to remove any field with 'Patient' in it and the phase encoding direction will be re-encoded in a BIDS compliant way (`i`, `j`, `k`, `i-`, `j-`, `k-`).
 
