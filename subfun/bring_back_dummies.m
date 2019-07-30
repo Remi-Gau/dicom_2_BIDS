@@ -1,4 +1,4 @@
-function bring_back_dummies(func_src_dir)
+function bring_back_dummies(func_src_dir,opt)
 
 dummy_dir = [deblank(func_src_dir) '-dummy'];
 
