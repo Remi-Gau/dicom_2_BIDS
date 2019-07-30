@@ -1,4 +1,6 @@
 function bring_back_dummies(func_src_dir,opt)
+% once the conversion has happened we bring back the dummy scans in the original pool
+% and we remove the temporary folder
 
 dummy_dir = [deblank(func_src_dir) '-dummy'];
 

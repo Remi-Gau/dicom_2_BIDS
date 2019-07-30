@@ -17,8 +17,8 @@ opt.onset_files_dir = 'D:\Dropbox\BIDS\olf_blind\source\Results';
 %% Parameters definitions
 % select what to convert and transfer
 opt.do_anat = 1;
-opt.do_func = 1;
-opt.do_dwi = 1;
+opt.do_func = 0;
+opt.do_dwi = 0;
 
 
 opt.zip_output = 0; % 1 to zip the output into .nii.gz (not ideal for
@@ -37,19 +37,25 @@ opt.subject_dir_pattern = {...
 opt.subject_tgt_pattern = {...
     'ctrl'; ...
     'blnd'};
+% opt.subject_to_run = {[] []};
 
-opt.subj_ls = {};
+% opt.subject_dir_pattern = {'Olf_Blind_B*'};
+% opt.subject_tgt_pattern = {'blnd'};
+
+
+
+% opt.subj_ls = { { [] } };
 
 
 
 %% Details for ANAT
 opt.src_anat_dir_patterns = {
-    'acq-mprage_T1w', ...
+%     'acq-mprage_T1w', ...
     'acq-tse_t2-tse-cor-'};
 
 % corresponding names for the output file in BIDS data set
 opt.tgt_anat_dir_patterns = {
-    '_T1w', ...
+%     '_T1w', ...
     '_acq-tse_T2w'};
 
 

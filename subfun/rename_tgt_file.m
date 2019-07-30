@@ -1,4 +1,7 @@
 function rename_tgt_file(tgt_dir, pattern, tgt_name, ext)
+% rename a file to fit the BIDS nomemclature
+% some characters in the input filename will be changed if the file is a bold
+% modality
 
 pattern = strrep(pattern, '-','_');
 pattern = strrep(pattern, '.','_');
