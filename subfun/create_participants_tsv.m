@@ -1,5 +1,13 @@
 function create_participants_tsv(tgt_dir, ls_sub_id, age, gender)
 
+gender = gender';
+gender = gender(:);
+gender( cellfun(@isempty,gender) ) = [];
+
+age = age';
+age = age(:);
+age(age==0) = [];
+
 p = struct(...
     'participant_id',{ls_sub_id}, ...
     'sex', {gender}, ...
@@ -34,4 +42,3 @@ content.sex = struct(...
 spm_jsonwrite(filename, content, opts)
 
 end
-
