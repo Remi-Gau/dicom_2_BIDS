@@ -17,7 +17,7 @@ if opt.do
         disp(bold_dirs)
         fprintf('\n')
         warning('More than the required number of source func folders for that task')
-        create_log_file(sub_id, sub_src_dir, ['_task-' pattern.output], bold_dirs)
+        create_log_file(sub_id, sub_src_dir, ['_task-' pattern.output], bold_dirs, 'folder')
     end
 
     delete(fullfile(func_tgt_dir, ['*' pattern.output '*.nii*']))
