@@ -39,7 +39,7 @@ if get_onset
     for iBold = 1:nb_folder
         
         func_tgt_name = fullfile(func_tgt_dir, ...
-            [sub_id '_task-' pattern.output '_run-' sprintf('%01.0f', iBold) '_bold']);
+            [sub_id '_task-' pattern.output '_run-' sprintf('%02.0f', iBold) '_bold']);
         
         input_file = deblank(onset_files(iBold,:));
         output_file = [func_tgt_name(1:end-4) 'events.tsv'];

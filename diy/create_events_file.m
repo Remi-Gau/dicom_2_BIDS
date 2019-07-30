@@ -157,6 +157,9 @@ else
     trial_type = cellstr(odorant);
 end
 
+% remove any empty trial type in case of missing stimuli
+trial_type( cellfun(@isempty,trial_type) ) = [];
+
 [onsets, idx] = sort(onsets);
 trial_type = trial_type(idx);
 durations = durations(idx);

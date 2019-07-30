@@ -1,45 +1,7 @@
 % script to import DICOM and format them into a BIDS structure
-% while saving json and creating a participants.tsv file
-% also creates a dataset_decription.json with empty fields
+% Will also create the required json files and tsv files
 
-% REQUIRES
-% - SPM12 7487
-% - DICOM2NII (included in this repo)
-
-% in theory a lot of the parameters can be changed in the parameters
-% section at the beginning of the script
-
-% in general make sure you have removed from your subjects source folder
-% any folder that you do not want to convert (interrupted sequences for example)
-
-% at the moment this script is not super flexible and assumes only one session
-
-% the way the subject naming happens is hardcoded
-
-% the script can remove up to 9 dummy scans (they are directly moved from the
-% dicom source folder and put in a 'dummy' folder) so that dicm2nii does
-% not "see" them
-
-% the way event.tsv files are generated is very unflexible
-
-% also the stimulus onset is not yet recalculated depending on the number
-% of dummies removed
-
-% there will still some cleaning up to do in the json files: for example
-% most likely you will only want to have json files in the root folder and
-% that apply to all inferior levels rather than one json file per nifti
-% file (make use of the inheritance principle)
-
-% json files created will be modified to remove any field with 'Patient' in
-% it and the phase encoding direction will be re-encoded in a BIDS
-% compliant way (i, j, k, i-, j-, k-)
-
-% the participants.tsv file is created based on the header info of the
-% anatomical (sex and age) so it might not be accurate
-
-% TO DO
-% - extract participant weight from header and put in tsv file?
-% - allow for removal of more than 9 dummy scans
+% See getOptions and README for more information
 
 clear
 clc
@@ -52,19 +14,29 @@ clc
 % create general json and data dictionary files
 create_dataset_description_json(opt.tgt_dir, opt)
 
+ls_sub_id = {};
+
 for iGroup = 1:numel(opt.subject_dir_pattern)
+
+    opt.iGroup = iGroup;
 
     % get list of subjsects
     if isempty(opt.subject_dir_pattern{iGroup})
-        subj_ls = opt.subj_ls{1};
+        subj_ls = opt.subj_ls;
     else
         subj_ls = dir(fullfile(opt.src_dir, opt.subject_dir_pattern{iGroup}));
         subj_ls = {subj_ls.name};
     end
     nb_sub = numel(subj_ls);
+    
+    if isfield(opt, 'subject_to_run') 
+        subject_to_run = opt.subject_to_run{iGroup};
+    else
+        subject_to_run = 1:nb_sub;
+    end
 
 
-    for iSub = 1 %nb_sub % for each subject
+    for iSub = subject_to_run % for each subject
 
         opt.iSub = iSub;
 
@@ -77,7 +49,7 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
         sub_id = [sub_id sprintf('%02.0f', iSub)]; %#ok<*AGROW>
 
         % keep track of the subjects ID to create participants.tsv
-        ls_sub_id{iSub} = sub_id; %#ok<*SAGROW>
+        ls_sub_id{end+1} = sub_id; %#ok<*SAGROW>
 
         fprintf('\n\n\nProcessing %s\n', sub_id)
 
@@ -131,16 +103,17 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
 
             fprintf('\n\ndoing FUNC\n')
 
+            %% do for each TASK
             for task_idx = 1:numel(opt.task_name)
                 fprintf('\n\n doing TASK: %s\n', opt.task_name{task_idx})
                 [func_tgt_dir] = convert_func(sub_id, sub_src_dir, sub_tgt_dir, opt, task_idx);
-                
+
                 fprintf('\n')
                 convert_event(sub_id, subj_ls{iSub}, sub_src_dir, sub_tgt_dir, opt, task_idx);
-                
+
                 fprintf('\n')
                 convert_stim(sub_id, subj_ls{iSub}, sub_src_dir, sub_tgt_dir, opt, task_idx);
-                
+
                 fprintf('\n')
                 convert_physio(sub_id, subj_ls{iSub}, sub_src_dir, sub_tgt_dir, opt, task_idx);
             end
@@ -178,7 +151,7 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
 
             end
 
-            %% clean up
+            % clean up
             delete(fullfile(dwi_tgt_dir, '*.mat'))
             delete(fullfile(dwi_tgt_dir, '*.txt'))
 
