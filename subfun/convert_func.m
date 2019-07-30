@@ -43,7 +43,7 @@ for iBold = 1:nb_folder
         
         % bring them back to leave the original structure seemingly
         % untouched
-        bring_back_dummies(func_src_dir)
+        bring_back_dummies(func_src_dir,opt)
 
     end
 
