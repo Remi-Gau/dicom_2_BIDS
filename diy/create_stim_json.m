@@ -12,7 +12,6 @@ RepetitionTime =  0.785;
 
 content.SamplingFrequency = 25;
 content.StartTime = opt.nb_dummies * RepetitionTime * -1;
-content.Columns = {'breath', 'stimulus', 'FIIK3', 'FIIK4', 'response'};
-% FIIK: fuck if I know
+content.Columns = {'Respiratory'};
 
 spm_jsonwrite(filename, content, opts)
