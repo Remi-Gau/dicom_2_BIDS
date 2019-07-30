@@ -19,14 +19,14 @@ if ~isempty(opt.get_physio)
             disp(physio_files)
             fprintf('\n')
             warning('More than the required number of source stim files for that task')
-            create_log_file(sub_id, sub_src_dir, ['_task-' pattern.output], physio_files)
+            create_log_file(sub_id, sub_src_dir, ['_task-' pattern.output], physio_files, folder')
         end
         
         % do the conversion
         for iBold = 1:nb_folder
             
             func_tgt_name = fullfile(func_tgt_dir, ...
-                [sub_id '_task-' pattern.output '_run-' sprintf('%02.0f', iBold) '_bold']);
+                [sub_id '_task-' pattern.output '_run-' sprintf('%01.0f', iBold) '_bold']);
             
             input_file = deblank(physio_files(iBold,:));
             output_file = [func_tgt_name(1:end-4) 'physio.tsv'];

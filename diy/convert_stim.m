@@ -19,7 +19,7 @@ if ~isempty(opt.get_stim)
             disp(stim_files)
             fprintf('\n')
             warning('More than the required number of source stim files for that task')
-            create_log_file(sub_id, sub_src_dir, ['_task-' pattern.output], stim_files)
+            create_log_file(sub_id, sub_src_dir, ['_task-' pattern.output], stim_files, 'folder')
         end
         
         % do the conversion
