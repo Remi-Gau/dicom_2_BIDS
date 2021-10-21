@@ -3,16 +3,15 @@
 
 % See getOptions and README for more information
 
-clear
-clc
+clear;
+clc;
 
 [opt] = setUp();
-
 
 %% let's do this
 
 % create general json and data dictionary files
-create_dataset_description_json(opt.tgt_dir, opt)
+create_dataset_description_json(opt.tgt_dir, opt);
 
 ls_sub_id = {};
 
@@ -28,13 +27,12 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
         subj_ls = {subj_ls.name};
     end
     nb_sub = numel(subj_ls);
-    
-    if isfield(opt, 'subject_to_run') 
+
+    if isfield(opt, 'subject_to_run')
         subject_to_run = opt.subject_to_run{iGroup};
     else
         subject_to_run = 1:nb_sub;
     end
-
 
     for iSub = subject_to_run % for each subject
 
@@ -48,16 +46,18 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
         end
         sub_id = [sub_id sprintf('%02.0f', iSub)]; %#ok<*AGROW>
 
-        % keep track of the subjects ID to create participants.tsv
-        ls_sub_id{end+1} = sub_id; %#ok<*SAGROW>
+        opt.scans_tsv{iSub, iGroup}.name = sub_id;
+        opt.scans_tsv{iSub, iGroup}.filename = {};
+        opt.scans_tsv{iSub, iGroup}.acq_time = {};
 
-        fprintf('\n\n\nProcessing %s\n', sub_id)
+        % keep track of the subjects ID to create participants.tsv
+        ls_sub_id{end + 1} = sub_id; %#ok<*SAGROW>
+
+        fprintf('\n\n\nProcessing %s\n', sub_id);
 
         % creating directories in BIDS structure
         sub_src_dir = fullfile(opt.src_dir, subj_ls{iSub});
         sub_tgt_dir = fullfile(opt.tgt_dir, sub_id);
-
-
 
         %% Anatomy folders
         if opt.do_anat
@@ -66,13 +66,12 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
 
             spm_mkdir(sub_tgt_dir, 'anat');
 
-            fprintf('\n\ndoing ANAT\n')
+            fprintf('\n\ndoing ANAT\n');
 
             % remove any nifti files and json present in the target folder to start
             % from a blank slate
-            delete(fullfile(sub_tgt_dir, 'anat', '*.nii*'))
-            delete(fullfile(sub_tgt_dir, 'anat', '*.json'))
-
+            delete(fullfile(sub_tgt_dir, 'anat', '*.nii*'));
+            delete(fullfile(sub_tgt_dir, 'anat', '*.json'));
 
             %% do for all ANAT
             for iIMG = 1:numel(opt.src_anat_dir_patterns)
@@ -89,10 +88,9 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
             end
 
             %% clean up
-            delete(fullfile(anat_tgt_dir, '*.mat'))
+            delete(fullfile(anat_tgt_dir, '*.mat'));
 
         end
-
 
         %% BOLD series
         if opt.do_func
@@ -101,25 +99,25 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
 
             spm_mkdir(sub_tgt_dir, 'func');
 
-            fprintf('\n\ndoing FUNC\n')
+            fprintf('\n\ndoing FUNC\n');
 
             %% do for each TASK
             for task_idx = 1:numel(opt.task_name)
-                fprintf('\n\n doing TASK: %s\n', opt.task_name{task_idx})
+                fprintf('\n\n doing TASK: %s\n', opt.task_name{task_idx});
                 [func_tgt_dir] = convert_func(sub_id, sub_src_dir, sub_tgt_dir, opt, task_idx);
 
-                fprintf('\n')
+                fprintf('\n');
                 convert_event(sub_id, subj_ls{iSub}, sub_src_dir, sub_tgt_dir, opt, task_idx);
 
-                fprintf('\n')
+                fprintf('\n');
                 convert_stim(sub_id, subj_ls{iSub}, sub_src_dir, sub_tgt_dir, opt, task_idx);
 
-                fprintf('\n')
+                fprintf('\n');
                 convert_physio(sub_id, subj_ls{iSub}, sub_src_dir, sub_tgt_dir, opt, task_idx);
             end
 
             % clean up
-            delete(fullfile(func_tgt_dir, '*.mat'))
+            delete(fullfile(func_tgt_dir, '*.mat'));
 
         end
 
@@ -130,13 +128,13 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
 
             spm_mkdir(sub_tgt_dir, 'dwi');
 
-            fprintf('\n\ndoing DWI\n')
+            fprintf('\n\ndoing DWI\n');
 
             % remove any nifti files and json present in the target folder to start
             % from a blank slate
-            delete(fullfile(sub_tgt_dir, 'dwi', '*.nii*'))
-            delete(fullfile(sub_tgt_dir, 'dwi', '*.json'))
-            delete(fullfile(sub_tgt_dir, 'dwi', '*.bv*'))
+            delete(fullfile(sub_tgt_dir, 'dwi', '*.nii*'));
+            delete(fullfile(sub_tgt_dir, 'dwi', '*.json'));
+            delete(fullfile(sub_tgt_dir, 'dwi', '*.bv*'));
 
             %% do for all DWI
             for iIMG = 1:numel(opt.src_dwi_dir_patterns)
@@ -152,16 +150,14 @@ for iGroup = 1:numel(opt.subject_dir_pattern)
             end
 
             % clean up
-            delete(fullfile(dwi_tgt_dir, '*.mat'))
-            delete(fullfile(dwi_tgt_dir, '*.txt'))
-
+            delete(fullfile(dwi_tgt_dir, '*.mat'));
+            delete(fullfile(dwi_tgt_dir, '*.txt'));
 
         end
 
     end
 
 end
-
 
 %% print participants.tsv file
 if opt.do_anat && opt.do
@@ -170,4 +166,4 @@ end
 
 message = 'REMEMBER TO CHECK IF YOU HAVE A VALID BIDS DATA SET BY USING THE BIDS VALIDATOR:';
 bids_validator_URL = 'https://bids-standard.github.io/bids-validator/';
-fprintf('\n\n%s\n\n%s\n\n', message, bids_validator_URL)
+fprintf('\n\n%s\n\n%s\n\n', message, bids_validator_URL);
